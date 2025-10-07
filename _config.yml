@@ -1,3 +1,9 @@
 theme: jekyll-theme-minimal
 title: Statistics blog
+theme: minima
 description: Statistics homework for Alessandro Nocerino will be posted here
+
+collections:
+  homeworks:
+    output: true
+    permalink: /homeworks/:name/
