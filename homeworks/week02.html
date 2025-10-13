@@ -1,96 +1,108 @@
 <!DOCTYPE html>
-background: radial-gradient(1000px 600px at 10% -10%, #1a2452 0%, transparent 60%),
-radial-gradient(1200px 700px at 110% 10%, #122046 0%, transparent 60%),
-var(--bg);
-color: var(--text);
-}
-.container { max-width: 980px; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
-header h1 { margin: 0 0 0.5rem; font-size: clamp(1.6rem, 3vw, 2.2rem); }
-header p { margin: 0; color: var(--muted); }
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dataset & Distributions (PostgreSQL)</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #11172e;
+      --text: #e9eef7;
+      --muted: #b7c2d6;
+      --accent: #6ea8fe;
+      --border: #243054;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1000px 600px at 10% -10%, #1a2452 0%, transparent 60%),
+                  radial-gradient(1200px 700px at 110% 10%, #122046 0%, transparent 60%),
+                  var(--bg);
+      color: var(--text);
+    }
+    .container { max-width: 980px; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+    header h1 { margin: 0 0 0.5rem; font-size: clamp(1.6rem, 3vw, 2.2rem); }
+    header p { margin: 0; color: var(--muted); }
 
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent), var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.25rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
 
-.card {
-background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent), var(--card);
-border: 1px solid var(--border);
-border-radius: 18px;
-padding: 1.25rem;
-box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-}
+    section { margin-top: 1.25rem; }
+    h2 { font-size: 1.15rem; margin: 0 0 0.75rem; color: var(--text); }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin: 0 0 1rem; }
+    .pill {
+      background: rgba(110,168,254,0.1);
+      border: 1px dashed var(--accent);
+      color: var(--accent);
+      padding: 0.5rem 0.75rem; border-radius: 999px; width: max-content;
+      font-size: 0.9rem;
+    }
 
+    figure { margin: 0; }
+    .shot { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--border); background: #0a0f1f; display: block; }
+    figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem; }
 
-section { margin-top: 1.25rem; }
-h2 { font-size: 1.15rem; margin: 0 0 0.75rem; color: var(--text); }
-.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin: 0 0 1rem; }
-.pill {
-background: rgba(110,168,254,0.1);
-border: 1px dashed var(--accent);
-color: var(--accent);
-padding: 0.5rem 0.75rem; border-radius: 999px; width: max-content;
-font-size: 0.9rem;
-}
+    .grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 
-
-figure { margin: 0; }
-.shot { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--border); background: #0a0f1f; display: block; }
-figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem; }
-
-
-.grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
-@media (min-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-
-
-.foot { margin-top: 1.25rem; color: var(--muted); font-size: 0.95rem; }
-code { background: rgba(255,255,255,0.06); border: 1px solid var(--border); padding: 0.15rem 0.35rem; border-radius: 6px; }
-</style>
+    .foot { margin-top: 1.25rem; color: var(--muted); font-size: 0.95rem; }
+    code { background: rgba(255,255,255,0.06); border: 1px solid var(--border); padding: 0.15rem 0.35rem; border-radius: 6px; }
+  </style>
 </head>
 <body>
-<div class="container">
-<header>
-<div class="pill">PostgreSQL · Data Summary</div>
-<h1>Dataset Creation & Distributions</h1>
-<p>This page documents that a dataset was created in PostgreSQL and summarizes univariate and bivariate distributions with table screenshots.</p>
-</header>
+  <div class="container">
+    <header>
+      <div class="pill">PostgreSQL · Data Summary</div>
+      <h1>Dataset Creation & Distributions</h1>
+      <p>This page documents that a dataset was created in PostgreSQL and summarizes univariate and bivariate distributions with table screenshots.</p>
+    </header>
 
+    <main class="card">
+      <!-- Dataset section -->
+      <section>
+        <h2>1) Dataset (PostgreSQL)</h2>
+        <div class="meta">
+          <div>Source: <strong>PostgreSQL</strong></div>
+          <div>Objects: <strong>people</strong> table</div>
+          <div>Columns: <strong>height_cm, weight_kg, eye_color</strong></div>
+        </div>
+        <figure>
+          <!-- Replace the src below with the actual screenshot path -->
+          <img class="shot" src="../assets/week02/table1.PNG" alt="Screenshot of the PostgreSQL dataset table" />
+          <figcaption>Figure 1 — Dataset table screenshot (placeholder path)</figcaption>
+        </figure>
+      </section>
 
-<main class="card">
-<!-- Dataset section -->
-<section>
-<h2>1) Dataset (PostgreSQL)</h2>
-<div class="meta">
-<div>Source: <strong>PostgreSQL</strong></div>
-<div>Objects: <strong>people</strong> table</div>
-<div>Columns: <strong>height_cm, weight_kg, eye_color</strong></div>
-</div>
-<figure>
-<!-- Replace the src below with the actual screenshot path -->
-<img class="shot" src="../assets/week02/table1.PNG" alt="Screenshot of the PostgreSQL dataset table" />
-<figcaption>Figure 1 — Dataset table screenshot (placeholder path)</figcaption>
-</figure>
-</section>
+      <!-- Univariate distribution section -->
+      <section>
+        <h2>2) Univariate Distribution</h2>
+        <p>Example: <em>eye_color</em> frequency computed via <code>SELECT eye_color, COUNT(*) FROM people GROUP BY eye_color;</code></p>
+        <figure>
+          <!-- Replace the src below with the actual screenshot path -->
+          <img class="shot" src="../assets/week02/univ.PNG" alt="Screenshot of univariate distribution table (eye_color counts)" />
+          <figcaption>Figure 2 — Univariate distribution table screenshot (placeholder path)</figcaption>
+        </figure>
+      </section>
 
+      <!-- Bivariate distribution section -->
+      <section>
+        <h2>3) Bivariate Distribution</h2>
+        <p>Example: <em>height_bin × eye_color</em> contingency table; counts computed via <code>SELECT height_bin, eye_color, COUNT(*) ... GROUP BY height_bin, eye_color;</code></p>
+        <figure>
+          <!-- Replace the src below with the actual screenshot path -->
+          <img class="shot" src="../assets/week02/biv.PNG" alt="Screenshot of bivariate distribution table (height bin by eye color)" />
+          <figcaption>Figure 3 — Bivariate distribution table screenshot (placeholder path)</figcaption>
+        </figure>
+      </section>
 
-<!-- Univariate distribution section -->
-<section>
-<h2>2) Univariate Distribution</h2>
-<p>Example: <em>eye_color</em> frequency computed via <code>SELECT eye_color, COUNT(*) FROM people GROUP BY eye_color;</code></p>
-<figure>
-<img class="shot" src="../assets/week02/univ.PNG" alt="Screenshot of univariate distribution table (eye_color counts)" />
-<figcaption>Figure 2 — Univariate distribution table screenshot</figcaption>
-</figure>
-</section>
-
-
-<!-- Bivariate distribution section -->
-<section>
-<h2>3) Bivariate Distribution</h2>
-<p>Example: <em>height_bin × eye_color</em> contingency table; counts computed via <code>SELECT height_bin, eye_color, COUNT(*) ... GROUP BY height_bin, eye_color;</code></p>
-<figure>
-<img class="shot" src="../assets/week02/biv.PNG" alt="Screenshot of bivariate distribution table (height by eye color)" />
-<figcaption>Figure 3 — Bivariate distribution table screenshot (placeholder path)</figcaption>
-</figure>
-</section>
-
-</main>
-</div>
+    </main>
+  </div>
 </body>
 </html>
+
