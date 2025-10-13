@@ -46,50 +46,34 @@ margin-bottom: 1em;
 </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="pill">PostgreSQL · Data Summary</div>
-      <h1>Dataset Creation & Distributions</h1>
-      <p>A dataset is a structured collection of related data. It represents the raw information gathered for analysis or modeling. 
-        A distribution, on the other hand, describes how the values of a variable in that dataset are spread or occur, 
-        showing the frequency or probability of different outcomes. When analyzing one variable at a time, it’s called a univariate distribution (e.g., the distribution of heights in a group). 
-        When analyzing two or more variables together, it’s called a multivariate distribution (e.g., the joint distribution of height and weight).</p>
-    </header>
+<h1>Dataset Creation & Distributions</h1>
+<p>A dataset is a structured collection of related data, typically organized in rows (observations) and columns (variables or features). 
+  It represents the raw information gathered for analysis or modeling. A distribution, 
+  on the other hand, describes how the values of a variable in that dataset are spread or occur, 
+  showing the frequency or probability of different outcomes. When analyzing one variable at a time, 
+  it’s called a univariate distribution (e.g., the distribution of heights in a group). When analyzing two or more variables together, 
+  it’s called a multivariate distribution (e.g., the joint distribution of height and weight).</p>
 
-    <main class="card">
-      <!-- Dataset section -->
-      <section>
-        <h2>1) Dataset (PostgreSQL)</h2>
-        <div class="meta">
-          <div>Source: <strong>PostgreSQL</strong></div>
-          <div>Objects: <strong>people</strong> table</div>
-          <div>Columns: <strong>height_cm, weight_kg, eye_color</strong></div>
-        </div>
-        <figure>
-          <img class="shot" src="../assets/week02/table1.PNG" alt="Screenshot of the PostgreSQL dataset table" />
-        </figure>
-      </section>
 
-      <!-- Univariate distribution section -->
-      <section>
-        <h2>2) Univariate Distribution</h2>
-        <p>Example: <em>eye_color</em> frequency computed via <code>SELECT eye_color, COUNT(*) FROM people GROUP BY eye_color;</code></p>
-        <figure>
-          <img class="shot" src="../assets/week02/univ.PNG" alt="Screenshot of univariate distribution table (eye_color counts)" />
-        </figure>
-      </section>
+<h2>1) Dataset (PostgreSQL)</h2>
+<p>Source: PostgreSQL table <code>people</code> with columns <code>height_cm</code>, <code>weight_kg</code>, and <code>eye_color</code>.</p>
+<figure>
+<img src="../assets/week02/table1.PNG" alt="Dataset table screenshot" />
+</figure>
 
-      <!-- Bivariate distribution section -->
-      <section>
-        <h2>3) Bivariate Distribution</h2>
-        <p>Example: <em>height_bin × eye_color</em> contingency table; counts computed via <code>SELECT height_bin, eye_color, COUNT(*) ... GROUP BY height_bin, eye_color;</code></p>
-        <figure>
-          <img class="shot" src="../assets/week02/biv.PNG" alt="Screenshot of bivariate distribution table (height bin by eye color)" />
-        </figure>
-      </section>
 
-    </main>
-  </div>
+<h2>2) Univariate Distribution</h2>
+<p>Computed with <code>SELECT eye_color, COUNT(*) FROM people GROUP BY eye_color;</code></p>
+<figure>
+<img src="../assets/week02/univ.PNG" alt="Univariate distribution screenshot" />
+</figure>
+
+
+<h2>3) Bivariate Distribution</h2>
+<p>Computed with <code>SELECT height_bin, eye_color, COUNT(*) FROM people GROUP BY height_bin, eye_color;</code></p>
+<figure>
+<img src="../assets/week02/biv.PNG" alt="Bivariate distribution screenshot" />
+</figure>
 </body>
 </html>
 
