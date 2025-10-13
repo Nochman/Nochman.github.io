@@ -113,94 +113,112 @@ table.simple th:first-child, table.simple td:first-child { text-align: left; }
 .muted { color: #555; font-size: 0.9em; }
 </style>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const ENG_FREQ = {
+    A:8.167, B:1.492, C:2.782, D:4.253, E:12.702, F:2.228, G:2.015,
+    H:6.094, I:6.966, J:0.153, K:0.772, L:4.025, M:2.406, N:6.749,
+    O:7.507, P:1.929, Q:0.095, R:5.987, S:6.327, T:9.056, U:2.758,
+    V:0.978, W:2.360, X:0.150, Y:1.974, Z:0.074
+  };
 
+  const A_CODE = 'A'.charCodeAt(0);
+
+  function cleanUpper(text){ return text.toUpperCase(); }
+
+  function letterCounts(text){
+    const counts = Array(26).fill(0);
+    let total = 0;
+    for (const ch of cleanUpper(text)){
+      const code = ch.charCodeAt(0);
+      if (code >= A_CODE && code < A_CODE + 26){
+        counts[code - A_CODE]++; total++;
+      }
+    }
+    return { counts, total };
+  }
+
+  function renderDistribution(counts, total){
+    let html = '<table class="simple"><thead><tr><th>Letter</th><th>Count</th><th>%</th></tr></thead><tbody>';
+    for (let i = 0; i < 26; i++){
+      const L = String.fromCharCode(A_CODE + i);
+      const c = counts[i];
+      const p = total ? (c * 100 / total) : 0;
+      html += `<tr><td>${L}</td><td>${c}</td><td>${p.toFixed(2)}</td></tr>`;
+    }
+    html += `<tr><th>Total</th><th>${total}</th><th>100.00</th></tr></tbody></table>`;
+    return html;
+  }
+
+  function caesarShift(text, shift){
+    const s = ((shift % 26) + 26) % 26;
+    let out = '';
+    for (const ch of text){
+      if (/[A-Z]/.test(ch)){
+        const code = ch.charCodeAt(0) - 65;
+        out += String.fromCharCode(65 + ((code + s) % 26));
+      } else if (/[a-z]/.test(ch)){
+        const code = ch.charCodeAt(0) - 97;
+        out += String.fromCharCode(97 + ((code + s) % 26));
+      } else {
+        out += ch;
+      }
+    }
+    return out;
+  }
+
+  function chiSquaredScore(text){
+    const { counts, total } = letterCounts(text);
+    if (!total) return Infinity;
+    let chi = 0;
+    for (let i = 0; i < 26; i++){
+      const L = String.fromCharCode(A_CODE + i);
+      const observed = counts[i];
+      const expected = total * (ENG_FREQ[L] / 100);
+      if (expected > 0){
+        chi += Math.pow(observed - expected, 2) / expected;
+      }
+    }
+    return chi;
+  }
+
+  function autoDecode(cipher){
+    let best = { shift: 0, score: Infinity, plaintext: cipher };
+    for (let s = 0; s < 26; s++){
+      const attempt = caesarShift(cipher, -s);
+      const score = chiSquaredScore(attempt);
+      if (score < best.score){
+        best = { shift: s, score, plaintext: attempt };
+      }
+    }
+    return best;
+  }
+
+  // ---- Event listeners ----
+  const $ = (sel) => document.querySelector(sel);
+
+  $('#btnDist').addEventListener('click', () => {
+    const text = $('#inputText').value || '';
+    const { counts, total } = letterCounts(text);
+    $('#distOutput').innerHTML = renderDistribution(counts, total);
+  });
+
+  $('#btnEncrypt').addEventListener('click', () => {
+    const text = $('#inputText').value || '';
+    const shift = parseInt($('#shiftInput').value || '0', 10);
+    $('#encryptedText').value = caesarShift(text, shift);
+  });
+
+  $('#btnAutoDecode').addEventListener('click', () => {
+    const cipher = $('#encryptedText').value || '';
+    const result = autoDecode(cipher);
+    $('#decodedText').value = result.plaintext;
+    $('#decodeReport').innerHTML =
+      `<p class="muted">Best shift guess: <strong>${result.shift}</strong>. Chi-squared: ${result.score.toFixed(2)}</p>`;
+  });
+});
+</script>
  
 </body>
-   <script>
-(function(){
-const ENG_FREQ = {
-A:8.167, B:1.492, C:2.782, D:4.253, E:12.702, F:2.228, G:2.015,
-H:6.094, I:6.966, J:0.153, K:0.772, L:4.025, M:2.406, N:6.749,
-O:7.507, P:1.929, Q:0.095, R:5.987, S:6.327, T:9.056, U:2.758,
-V:0.978, W:2.360, X:0.150, Y:1.974, Z:0.074
-};
-
-
-const A_CODE = 'A'.charCodeAt(0), Z_CODE = 'Z'.charCodeAt(0);
-const toLetter = c => /[A-Za-z]/.test(c);
-
-
-function cleanUpper(text){
-return text.toUpperCase();
-}
-
-
-function letterCounts(text){
-const counts = Array(26).fill(0);
-let total = 0;
-for (const ch of cleanUpper(text)){
-const code = ch.charCodeAt(0);
-if (code >= A_CODE && code <= Z_CODE){
-counts[code - A_CODE]++;
-total++;
-}
-}
-return { counts, total };
-}
-
-
-function renderDistribution(counts, total){
-const letters = Array.from({length:26}, (_,i)=>String.fromCharCode(A_CODE+i));
-let html = '<table class="simple"><thead><tr><th>Letter</th><th>Count</th><th>%</th></tr></thead><tbody>';
-letters.forEach((L,i)=>{
-const c = counts[i];
-const p = total ? (c*100/total) : 0;
-html += `<tr><td>${L}</td><td>${c}</td><td>${p.toFixed(2)}</td></tr>`;
-});
-html += `<tr><th>Total</th><th>${total}</th><th>100.00</th></tr></tbody></table>`;
-return html;
-}
-
-
-function caesarShift(text, shift){
-const s = ((shift % 26) + 26) % 26;
-let out = '';
-for (const ch of text){
-if (/[A-Z]/.test(ch)){
-const code = ch.charCodeAt(0) - 65;
-out += String.fromCharCode(65 + ((code + s) % 26));
-} else if (/[a-z]/.test(ch)){
-const code = ch.charCodeAt(0) - 97;
-out += String.fromCharCode(97 + ((code + s) % 26));
-} else {
-out += ch;
-}
-}
-return out;
-}
-
-
-function chiSquaredScore(text){
-const { counts, total } = letterCounts(text);
-if (!total) return Infinity;
-const letters = Array.from({length:26}, (_,i)=>String.fromCharCode(A_CODE+i));
-let chi = 0;
-letters.forEach((L,i)=>{
-const observed = counts[i];
-const expected = total * (ENG_FREQ[L] / 100);
-if (expected > 0) {
-chi += Math.pow(observed - expected, 2) / expected;
-}
-});
-return chi;
-}
-
-
-function autoDecode(cipher){
-let best = { shift: 0, score: Infinity, plaintext: cipher };
-for (let s=0; s<26; s++){
-const attempt = caesarShift(cipher, -s);
-const score = chiSquaredScore(attempt);
-</script>
 </html>
 
