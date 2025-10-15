@@ -213,8 +213,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const cipher = $('#encryptedText').value || '';
     const result = autoDecode(cipher);
     $('#decodedText').value = result.plaintext;
-    $('#decodeReport').innerHTML =
-      `<p class="muted">Best shift guess: <strong>${result.shift}</strong>. Chi-squared: ${result.score.toFixed(2)}</p>`;
   });
 });
 </script>
