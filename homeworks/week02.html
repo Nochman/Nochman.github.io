@@ -105,7 +105,6 @@ margin-bottom: 1em;
 
 
 <style>
-/* minimal, additive styles */
 textarea { width: 100%; height: 120px; }
 table.simple { border-collapse: collapse; font-size: 0.95em; }
 table.simple th, table.simple td { border: 1px solid #ccc; padding: 4px 6px; text-align: right; }
@@ -193,8 +192,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     return best;
   }
-
-  // ---- Event listeners ----
   const $ = (sel) => document.querySelector(sel);
 
   $('#btnDist').addEventListener('click', () => {
