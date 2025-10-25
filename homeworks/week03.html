@@ -1,1 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dataset & Distributions (PostgreSQL)</title>
+  <style>
+body {
+font-family: Arial, sans-serif;
+background: #f9f9f9;
+color: #222;
+margin: 40px;
+}
+h1 {
+font-size: 1.6em;
+margin-bottom: 0.2em;
+}
+h2 {
+font-size: 1.2em;
+margin-top: 1.5em;
+border-bottom: 1px solid #ccc;
+padding-bottom: 0.2em;
+}
+p {
+margin: 0.3em 0 1em;
+}
+code {
+background: #eee;
+padding: 2px 4px;
+border-radius: 3px;
+font-size: 0.95em;
+}
+img {
+display: block;
+margin: 10px 0;
+border: 1px solid #ccc;
+border-radius: 4px;
+width: 400px;
+height: auto;
+}
+figcaption {
+font-size: 0.9em;
+color: #555;
+margin-bottom: 1em;
+}
+</style>
+</head>
+<body>
+<h2>5) RSA per-ASCII (toy)</h2>
+<p>Each character → ASCII (0–127). Encrypt each ASCII code with RSA. Ciphertext is space-separated integers.</p>
 
+<div>
+  <label><strong>p</strong> <input id="rsa2_p" type="number" value="29" style="width:90px"></label>
+  <label><strong>q</strong> <input id="rsa2_q" type="number" value="31" style="width:90px"></label>
+  <label><strong>e</strong> <input id="rsa2_e" type="number" value="3"  style="width:90px"></label>
+  <button id="rsa2_setup">Set up</button>
+  <span id="rsa2_params" class="muted"></span>
+</div>
+
+<div style="margin-top:10px;">
+  <label><strong>Plaintext</strong></label>
+  <textarea id="rsa2_plain" placeholder="Type some English text"></textarea>
+  <button id="rsa2_encrypt">Encrypt</button>
+  <textarea id="rsa2_cipher" placeholder="Ciphertext (space-separated integers)"></textarea>
+</div>
+
+<div style="margin-top:10px;">
+  <button id="rsa2_decrypt_known">Decrypt (known d)</button>
+  <textarea id="rsa2_known_plain" placeholder="Decrypted with known key"></textarea>
+</div>
+
+<div style="margin-top:10px;">
+  <button id="rsa2_attack">Attack (no key): frequency rank matching</button>
+  <textarea id="rsa2_attack_plain" placeholder="Attack guess (no key)"></textarea>
+  <div id="rsa2_attack_report" class="muted"></div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  // ===== Single algorithm approach =====
+  // Encrypt per ASCII with RSA; attack by frequency rank matching only.
+  // (Map most frequent ciphertext symbol -> most frequent English char, etc.)
+
+  // English frequency rank (ASCII chars to target), including SPACE as most common.
+  const FREQ_ASCII_ORDER = [
+    ' ', 'E','T','A','O','N','I','H','S','R','D','L','U','M','C','W','F','Y','G','P','B','V','K','X','Q','J','Z',
+    '.', ',', "'", '"', '-', '0','1','2','3','4','5','6','7','8','9'
+  ];
+
+  // ---- BigInt utilities ----
+  const bi = (x) => BigInt(x);
+  function egcd(a, b){
+    if (b === 0n) return {g:a, x:1n, y:0n};
+    const {g, x, y} = egcd(b, a % b);
+    return {g, x:y, y:x - (a / b) * y};
+  }
+  function modInv(a, m){
+    a = (a % m + m) % m;
+    const {g, x} = egcd(a, m);
+    if (g !== 1n) return null;
+    return (x % m + m) % m;
+  }
+  function modPow(base, exp, mod){
+    base = (base % mod + mod) % mod;
+    let res = 1n;
+    while (exp > 0n){
+      if (exp & 1n) res = (res * base) % mod;
+      base = (base * base) % mod;
+      exp >>= 1n;
+    }
+    return res;
+  }
+
+  // ---- RSA key state ----
+  let n=0n, phi=0n, e=0n, d=null;
+
+  function setupRSA(p, q, eIn){
+    const P = bi(p), Q = bi(q), E = bi(eIn);
+    n = P * Q;
+    phi = (P-1n)*(Q-1n);
+    d = modInv(E, phi);
+    e = E;
+    return {n, phi, e, d};
+  }
+
+  // ---- ASCII per-char RSA ----
+  function encryptASCII(plain){
+    // each char -> its ASCII code m (0..127+), ciphertext c = m^e mod n
+    if (!n || !e) return "";
+    const out = [];
+    for (const ch of plain){
+      const m = ch.charCodeAt(0);              // ASCII / UTF-16 low byte is fine here
+      const c = modPow(bi(m), e, n);           // RSA encrypt
+      out.push(c.toString());
+    }
+    return out.join(" ");
+  }
+
+  function decryptASCIIKnown(cipherStr){
+    if (!d) return "(Set up RSA first; d not available)";
+    const parts = cipherStr.trim().split(/\s+/).filter(Boolean);
+    let out = "";
+    for (const tok of parts){
+      const c = bi(tok);
+      const m = modPow(c, d, n);
+      out += String.fromCharCode(Number(m));
+    }
+    return out;
+  }
+
+  // ---- Attack (no key): frequency rank matching ONLY ----
+  // 1) Count ciphertext token frequencies
+  // 2) Sort tokens by descending frequency
+  // 3) Map the most frequent token -> most frequent English char (SPACE),
+  //    next -> 'E', next -> 'T', ... (FREQ_ASCII_ORDER)
+  // 4) Decode by substitution; unknowns become '?'
+  function attackByRank(cipherStr){
+    const parts = cipherStr.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return {plain:"", mapping:new Map(), note:"Empty ciphertext"};
+
+    const freq = new Map();
+    for (const t of parts) freq.set(t, (freq.get(t)||0) + 1);
+
+    const tokens = [...freq.keys()].sort((a,b)=> freq.get(b) - freq.get(a));
+
+    const mapC2P = new Map();
+    for (let i=0; i<tokens.length; i++){
+      const guess = FREQ_ASCII_ORDER[i] || '?';
+      mapC2P.set(tokens[i], guess);
+    }
+
+    let out = "";
+    for (const t of parts) out += mapC2P.get(t) ?? '?';
+
+    // small report
+    const topShow = tokens.slice(0, Math.min(tokens.length, 10))
+      .map((t,i)=> `${t}→${mapC2P.get(t)} (${freq.get(t)})`).join(', ');
+
+    return { plain: out, mapping: mapC2P, note: `Rank-mapped top: ${topShow}` };
+  }
+
+  // ---- Wire up UI ----
+  const $ = s => document.querySelector(s);
+
+  $('#rsa2_setup').addEventListener('click', ()=>{
+    const p = parseInt($('#rsa2_p').value,10);
+    const q = parseInt($('#rsa2_q').value,10);
+    const eVal = parseInt($('#rsa2_e').value,10);
+    const {n:nn, phi:pphi, e:ee, d:dd} = setupRSA(p, q, eVal);
+
+    // sanity: n should exceed typical ASCII max to avoid collisions (n > 127 recommended)
+    const warn = (nn <= 127n) ? "  (Warning: n ≤ 127; choose larger primes so n>127)" : "";
+    $('#rsa2_params').textContent = `n=${nn.toString()}, φ=${pphi.toString()}, e=${ee.toString()}, d=${dd?dd.toString():"(no inverse)"}${warn}`;
+  });
+
+  $('#rsa2_encrypt').addEventListener('click', ()=>{
+    $('#rsa2_cipher').value = encryptASCII($('#rsa2_plain').value || "");
+  });
+
+  $('#rsa2_decrypt_known').addEventListener('click', ()=>{
+    $('#rsa2_known_plain').value = decryptASCIIKnown($('#rsa2_cipher').value || "");
+  });
+
+  $('#rsa2_attack').addEventListener('click', ()=>{
+    const res = attackByRank($('#rsa2_cipher').value || "");
+    $('#rsa2_attack_plain').value = res.plain;
+    // show a small mapping snippet
+    const pairs = [...res.mapping.entries()].slice(0, 12).map(([c,p])=> `${c}→${p}`).join(', ');
+    $('#rsa2_attack_report').textContent = `${res.note}. Mapping sample: ${pairs}`;
+  });
+});
+</script>
+
+</body>
+</html>
