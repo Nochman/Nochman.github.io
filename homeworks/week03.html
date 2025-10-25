@@ -46,166 +46,116 @@ margin-bottom: 1em;
 </style>
 </head>
 <body>
-<h2>5) RSA per-ASCII (toy)</h2>
-<p>Each character → ASCII (0–127). Encrypt each ASCII code with RSA. Ciphertext is space-separated integers.</p>
+<h2>RSA (fixed p=3,q=7) — gibberish-word ciphertext</h2>
 
 <div>
-  <label><strong>p</strong> <input id="rsa2_p" type="number" value="29" style="width:90px"></label>
-  <label><strong>q</strong> <input id="rsa2_q" type="number" value="31" style="width:90px"></label>
-  <label><strong>e</strong> <input id="rsa2_e" type="number" value="3"  style="width:90px"></label>
-  <button id="rsa2_setup">Set up</button>
-  <span id="rsa2_params" class="muted"></span>
-</div>
-
-<div style="margin-top:10px;">
   <label><strong>Plaintext</strong></label>
-  <textarea id="rsa2_plain" placeholder="Type some English text"></textarea>
-  <button id="rsa2_encrypt">Encrypt</button>
-  <textarea id="rsa2_cipher" placeholder="Ciphertext (space-separated integers)"></textarea>
+  <textarea id="gf_plain" placeholder="Type some English text"></textarea>
+  <button id="gf_encrypt">Encrypt → gibberish</button>
 </div>
 
 <div style="margin-top:10px;">
-  <button id="rsa2_decrypt_known">Decrypt (known d)</button>
-  <textarea id="rsa2_known_plain" placeholder="Decrypted with known key"></textarea>
+  <label><strong>Ciphertext (gibberish words, space-separated)</strong></label>
+  <textarea id="gf_cipher" placeholder="Gibberish ciphertext appears here"></textarea>
 </div>
 
 <div style="margin-top:10px;">
-  <button id="rsa2_attack">Attack (no key): frequency rank matching</button>
-  <textarea id="rsa2_attack_plain" placeholder="Attack guess (no key)"></textarea>
-  <div id="rsa2_attack_report" class="muted"></div>
+  <button id="gf_attack">Guess plaintext (freq rank)</button>
+  <textarea id="gf_guess" placeholder="Guessed plaintext appears here"></textarea>
+  <div id="gf_report" class="muted"></div>
 </div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  // ===== Single algorithm approach =====
-  // Encrypt per ASCII with RSA; attack by frequency rank matching only.
-  // (Map most frequent ciphertext symbol -> most frequent English char, etc.)
+document.addEventListener('DOMContentLoaded', function() {
+  // Fixed RSA params: p=3,q=7 -> n=21, e=5
+  const n = 21n;
+  const e = 5n;
 
-  // English frequency rank (ASCII chars to target), including SPACE as most common.
-  const FREQ_ASCII_ORDER = [
-    ' ', 'E','T','A','O','N','I','H','S','R','D','L','U','M','C','W','F','Y','G','P','B','V','K','X','Q','J','Z',
-    '.', ',', "'", '"', '-', '0','1','2','3','4','5','6','7','8','9'
+  // Deterministic gibberish tokens for ciphertext values 0..20
+  // (21 tokens, unique, pronounceable-ish)
+  const TOKENS = [
+    "zab","mox","quf","xen","gol","tre","pib","suk","vra","lon",
+    "keb","hix","dun","raf","sey","wog","bil","nor","jas","yem","toq"
   ];
 
-  // ---- BigInt utilities ----
-  const bi = (x) => BigInt(x);
-  function egcd(a, b){
-    if (b === 0n) return {g:a, x:1n, y:0n};
-    const {g, x, y} = egcd(b, a % b);
-    return {g, x:y, y:x - (a / b) * y};
-  }
-  function modInv(a, m){
-    a = (a % m + m) % m;
-    const {g, x} = egcd(a, m);
-    if (g !== 1n) return null;
-    return (x % m + m) % m;
-  }
+  // English frequency rank order (space first)
+  const FREQ_ASCII_ORDER = [
+    ' ', 'E','T','A','O','N','I','H','S','R','D','L','U','M','C','W','F','Y','G','P','B','V','K','X','Q','J','Z'
+  ];
+
+  // BigInt modular exponentiation
   function modPow(base, exp, mod){
     base = (base % mod + mod) % mod;
-    let res = 1n;
-    while (exp > 0n){
-      if (exp & 1n) res = (res * base) % mod;
-      base = (base * base) % mod;
-      exp >>= 1n;
+    let result = 1n;
+    let b = base;
+    let eLocal = exp;
+    while (eLocal > 0n){
+      if (eLocal & 1n) result = (result * b) % mod;
+      b = (b * b) % mod;
+      eLocal >>= 1n;
     }
-    return res;
+    return result;
   }
 
-  // ---- RSA key state ----
-  let n=0n, phi=0n, e=0n, d=null;
-
-  function setupRSA(p, q, eIn){
-    const P = bi(p), Q = bi(q), E = bi(eIn);
-    n = P * Q;
-    phi = (P-1n)*(Q-1n);
-    d = modInv(E, phi);
-    e = E;
-    return {n, phi, e, d};
-  }
-
-  // ---- ASCII per-char RSA ----
-  function encryptASCII(plain){
-    // each char -> its ASCII code m (0..127+), ciphertext c = m^e mod n
-    if (!n || !e) return "";
-    const out = [];
+  // Encrypt plaintext -> gibberish tokens
+  function encryptToGibberish(plain){
+    const tokensOut = [];
     for (const ch of plain){
-      const m = ch.charCodeAt(0);              // ASCII / UTF-16 low byte is fine here
-      const c = modPow(bi(m), e, n);           // RSA encrypt
-      out.push(c.toString());
+      const m = BigInt(ch.charCodeAt(0));         // ASCII / code unit
+      const c = modPow(m, e, n);                 // c in 0..20
+      const idx = Number(c);                     // safe: c small
+      const tok = TOKENS[idx];                   // map integer -> token
+      tokensOut.push(tok);
     }
-    return out.join(" ");
+    // join tokens with spaces (no numbers anywhere)
+    return tokensOut.join(' ');
   }
 
-  function decryptASCIIKnown(cipherStr){
-    if (!d) return "(Set up RSA first; d not available)";
-    const parts = cipherStr.trim().split(/\s+/).filter(Boolean);
-    let out = "";
-    for (const tok of parts){
-      const c = bi(tok);
-      const m = modPow(c, d, n);
-      out += String.fromCharCode(Number(m));
-    }
-    return out;
-  }
+  // Attack (no key) — single algorithm: frequency rank-matching on tokens
+  function attackGibberish(cipherGibber){
+    const parts = cipherGibber.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return { plain: "", note: "Empty ciphertext" };
 
-  // ---- Attack (no key): frequency rank matching ONLY ----
-  // 1) Count ciphertext token frequencies
-  // 2) Sort tokens by descending frequency
-  // 3) Map the most frequent token -> most frequent English char (SPACE),
-  //    next -> 'E', next -> 'T', ... (FREQ_ASCII_ORDER)
-  // 4) Decode by substitution; unknowns become '?'
-  function attackByRank(cipherStr){
-    const parts = cipherStr.trim().split(/\s+/).filter(Boolean);
-    if (!parts.length) return {plain:"", mapping:new Map(), note:"Empty ciphertext"};
-
+    // count token frequencies
     const freq = new Map();
-    for (const t of parts) freq.set(t, (freq.get(t)||0) + 1);
+    for (const t of parts) freq.set(t, (freq.get(t) || 0) + 1);
 
-    const tokens = [...freq.keys()].sort((a,b)=> freq.get(b) - freq.get(a));
+    // tokens sorted by descending frequency
+    const tokensSorted = [...freq.keys()].sort((a,b) => freq.get(b) - freq.get(a));
 
-    const mapC2P = new Map();
-    for (let i=0; i<tokens.length; i++){
-      const guess = FREQ_ASCII_ORDER[i] || '?';
-      mapC2P.set(tokens[i], guess);
+    // build substitution: most frequent token -> ' ' (space), next -> 'E', etc.
+    const subMap = new Map();
+    for (let i = 0; i < tokensSorted.length; i++){
+      subMap.set(tokensSorted[i], FREQ_ASCII_ORDER[i] || '?');
     }
 
-    let out = "";
-    for (const t of parts) out += mapC2P.get(t) ?? '?';
+    // construct guessed plaintext by substituting each token
+    let guess = "";
+    for (const t of parts) {
+      guess += (subMap.get(t) ?? '?');
+    }
 
-    // small report
-    const topShow = tokens.slice(0, Math.min(tokens.length, 10))
-      .map((t,i)=> `${t}→${mapC2P.get(t)} (${freq.get(t)})`).join(', ');
+    // small report string
+    const topPairs = tokensSorted.slice(0, Math.min(12, tokensSorted.length))
+      .map(t => `${t}→${subMap.get(t)}(${freq.get(t)})`)
+      .join(', ');
 
-    return { plain: out, mapping: mapC2P, note: `Rank-mapped top: ${topShow}` };
+    return { plain: guess, note: `Top mapping: ${topPairs}` };
   }
 
-  // ---- Wire up UI ----
+  // UI wiring
   const $ = s => document.querySelector(s);
-
-  $('#rsa2_setup').addEventListener('click', ()=>{
-    const p = parseInt($('#rsa2_p').value,10);
-    const q = parseInt($('#rsa2_q').value,10);
-    const eVal = parseInt($('#rsa2_e').value,10);
-    const {n:nn, phi:pphi, e:ee, d:dd} = setupRSA(p, q, eVal);
-
-    // sanity: n should exceed typical ASCII max to avoid collisions (n > 127 recommended)
-    const warn = (nn <= 127n) ? "  (Warning: n ≤ 127; choose larger primes so n>127)" : "";
-    $('#rsa2_params').textContent = `n=${nn.toString()}, φ=${pphi.toString()}, e=${ee.toString()}, d=${dd?dd.toString():"(no inverse)"}${warn}`;
+  $('#gf_encrypt').addEventListener('click', () => {
+    const pt = $('#gf_plain').value || "";
+    $('#gf_cipher').value = encryptToGibberish(pt);
+    $('#gf_guess').value = ""; $('#gf_report').textContent = "";
   });
 
-  $('#rsa2_encrypt').addEventListener('click', ()=>{
-    $('#rsa2_cipher').value = encryptASCII($('#rsa2_plain').value || "");
-  });
-
-  $('#rsa2_decrypt_known').addEventListener('click', ()=>{
-    $('#rsa2_known_plain').value = decryptASCIIKnown($('#rsa2_cipher').value || "");
-  });
-
-  $('#rsa2_attack').addEventListener('click', ()=>{
-    const res = attackByRank($('#rsa2_cipher').value || "");
-    $('#rsa2_attack_plain').value = res.plain;
-    // show a small mapping snippet
-    const pairs = [...res.mapping.entries()].slice(0, 12).map(([c,p])=> `${c}→${p}`).join(', ');
-    $('#rsa2_attack_report').textContent = `${res.note}. Mapping sample: ${pairs}`;
+  $('#gf_attack').addEventListener('click', () => {
+    const ct = $('#gf_cipher').value || "";
+    const res = attackGibberish(ct);
+    $('#gf_guess').value = res.plain;
+    $('#gf_report').textContent = res.note;
   });
 });
 </script>
