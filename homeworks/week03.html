@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Guess (without key) using frequency rank mapping ---
   // Most frequent ciphertext char → ' ' (space) or 'e'? We'll prioritize 'e' as you said.
   // Single algorithm: rank-match ciphertext char frequencies to English frequency order.
-  const FREQ_ORDER = [' ','e','t','a','o','i','n','s','h','r','d','l','u','c','m','f','w','y','g','p','b','v','k','x','q','j','z'];
+  const FREQ_ORDER = [' ','e','t','a','o','i','n','s','h','r','d','l','c','u','m','w','f','g','y','p','b','v','k','j','x','q','z'];
 
   function guessByFrequency(cipher) {
     if (!cipher) return "";
