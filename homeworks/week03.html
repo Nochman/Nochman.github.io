@@ -46,112 +46,111 @@ margin-bottom: 1em;
 </style>
 </head>
 <body>
-<h2>RSA (p=3,q=7) — ciphertext as ASCII letters</h2>
-<p>Each character: m = char code, c = m^5 mod 21, then ciphertext char = ASCII(65 + c) (A..U). No integers displayed.</p>
+<h2>RSA (p=17, q=19 → n=323) — direct ASCII mapping + frequency guess (no key)</h2>
 
 <div>
   <label><strong>Plaintext</strong></label>
-  <textarea id="pt" placeholder="Type English text here"></textarea>
-  <button id="enc">Encrypt → ciphertext chars</button>
+  <textarea id="plain" placeholder="Type text..."></textarea>
+  <button id="encrypt">Encrypt</button>
 </div>
 
 <div style="margin-top:10px;">
-  <label><strong>Ciphertext (characters only)</strong></label>
-  <textarea id="ct" placeholder="Ciphertext appears here (chars A..U)"></textarea>
+  <label><strong>Ciphertext (gibberish ASCII)</strong></label>
+  <textarea id="cipher" placeholder="Ciphertext appears here"></textarea>
 </div>
 
 <div style="margin-top:10px;">
-  <button id="attack">Guess plaintext (frequency-rank)</button>
-  <textarea id="guess" placeholder="Guessed plaintext appears here"></textarea>
-  <div id="report" class="muted"></div>
+  <button id="guess">Guess (frequency — no key)</button>
+  <textarea id="guessed" placeholder="Guessed plaintext (no key)"></textarea>
+</div>
+
+<div style="margin-top:10px;">
+  <button id="decrypt">Decrypt (known key)</button>
+  <textarea id="decrypted" placeholder="Decrypted text (ground truth)"></textarea>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Fixed RSA params p=3,q=7 -> n=21, e=5
-  const n = 21n;
+document.addEventListener("DOMContentLoaded", () => {
+  // --- Fixed tiny RSA ---
+  const n = 17n * 19n;   // 323
   const e = 5n;
+  const d = 173n;        // private exponent (not used by the guesser)
 
-  // We map ciphertext integers 0..20 -> ASCII chars 'A'..'U'
-  const BASE_CHAR_CODE = 65; // 'A'
-  function intToCipherChar(i){ return String.fromCharCode(BASE_CHAR_CODE + i); }
-  function cipherCharToInt(ch){ return ch.charCodeAt(0) - BASE_CHAR_CODE; } // 0..20
-
-  // modPow (BigInt)
-  function modPow(base, exp, mod){
+  // --- Modular exponentiation (BigInt) ---
+  function modPow(base, exp, mod) {
     base = (base % mod + mod) % mod;
     let result = 1n;
-    let b = base;
-    let eLocal = exp;
-    while (eLocal > 0n){
-      if (eLocal & 1n) result = (result * b) % mod;
-      b = (b * b) % mod;
-      eLocal >>= 1n;
+    while (exp > 0n) {
+      if (exp & 1n) result = (result * base) % mod;
+      base = (base * base) % mod;
+      exp >>= 1n;
     }
     return result;
   }
 
-  // --- Encryption: plaintext -> ciphertext chars ---
-  function encryptPlainToChars(plain){
-    const out = [];
-    for (const ch of plain){
-      const m = BigInt(ch.charCodeAt(0));    // plaintext code (ASCII / UTF-16 code unit)
-      const c = modPow(m, e, n);             // c in 0..20
-      const idx = Number(c);                 // safe: small
-      out.push(intToCipherChar(idx));        // map integer -> char 'A'..'U'
+  // --- Encrypt: plaintext char -> ASCII -> m^e mod n -> ASCII char ---
+  function encrypt(text) {
+    let out = "";
+    for (const ch of text) {
+      const m = BigInt(ch.charCodeAt(0));
+      const c = modPow(m, e, n);
+      out += String.fromCharCode(Number(c));
     }
-    return out.join(''); // contiguous chars
+    return out;
   }
 
-  // --- Attack (single algorithm): frequency rank matching ---
-  // Frequency order (space first, then letters): single algorithm only.
-  const FREQ_ORDER = [' ', 'E','T','A','O','N','I','H','S','R','D','L','U','M','C','W','F','Y','G','P','B','V','K','X','Q','J','Z'];
-
-  function attackByRankOnChars(cipherChars){
-    // cipherChars: string, characters from 'A'..'U' corresponding to c values
-    if (!cipherChars || cipherChars.length === 0) return {plain:"", note:"Empty ciphertext"};
-
-    // Count token (char) frequencies
-    const freq = new Map();
-    for (const ch of cipherChars){
-      freq.set(ch, (freq.get(ch)||0) + 1);
+  // --- Decrypt (with key): ciphertext char -> ASCII -> c^d mod n -> ASCII char ---
+  function decrypt(cipher) {
+    let out = "";
+    for (const ch of cipher) {
+      const c = BigInt(ch.charCodeAt(0));
+      const m = modPow(c, d, n);
+      out += String.fromCharCode(Number(m));
     }
+    return out;
+  }
 
-    // Sort ciphertext characters by descending frequency
+  // --- Guess (without key) using frequency rank mapping ---
+  // Most frequent ciphertext char → ' ' (space) or 'e'? We'll prioritize 'e' as you said.
+  // Single algorithm: rank-match ciphertext char frequencies to English frequency order.
+  const FREQ_ORDER = ['e','t','a','o','i','n','s','h','r','d','l','u','c','m','f','w','y','g','p','b','v','k','x','q','j','z',' '];
+
+  function guessByFrequency(cipher) {
+    if (!cipher) return "";
+
+    // 1) Count ciphertext character frequencies
+    const freq = new Map();
+    for (const ch of cipher) freq.set(ch, (freq.get(ch) || 0) + 1);
+
+    // 2) Sort ciphertext characters by descending frequency
     const tokens = [...freq.keys()].sort((a,b) => freq.get(b) - freq.get(a));
 
-    // Map most frequent ciphertext char -> ' ' (space), next -> 'E', next -> 'T', ...
-    const mapC2P = new Map();
-    for (let i=0; i<tokens.length; i++){
-      mapC2P.set(tokens[i], FREQ_ORDER[i] || '?');
+    // 3) Build substitution: most frequent cipher char -> 'e', next -> 't', etc.
+    const sub = new Map();
+    for (let i = 0; i < tokens.length; i++) {
+      sub.set(tokens[i], FREQ_ORDER[i] || '?');
     }
 
-    // Apply mapping to the whole ciphertext to produce guessed plaintext
+    // 4) Apply substitution to produce the guessed plaintext
     let out = "";
-    for (const ch of cipherChars){
-      out += (mapC2P.get(ch) ?? '?');
-    }
-
-    const topMapPreview = tokens.slice(0, Math.min(10,tokens.length)).map(t => `${t}→${mapC2P.get(t)}(${freq.get(t)})`).join(', ');
-    return { plain: out, map: mapC2P, note: `Top mapping: ${topMapPreview}` };
+    for (const ch of cipher) out += (sub.get(ch) ?? '?');
+    return out;
   }
 
-  // --- UI wiring ---
+  // --- Wire up UI ---
   const $ = sel => document.querySelector(sel);
-  $('#enc').addEventListener('click', () => {
-    const pt = $('#pt').value || "";
-    $('#ct').value = encryptPlainToChars(pt);
-    $('#guess').value = "";
-    $('#report').textContent = "";
+
+  $("#encrypt").addEventListener("click", () => {
+    $("#cipher").value = encrypt($("#plain").value || "");
   });
 
-  $('#attack').addEventListener('click', () => {
-    const ct = $('#ct').value || "";
-    const res = attackByRankOnChars(ct);
-    $('#guess').value = res.plain;
-    $('#report').textContent = res.note;
+  $("#guess").addEventListener("click", () => {
+    $("#guessed").value = guessByFrequency($("#cipher").value || "");
   });
 
+  $("#decrypt").addEventListener("click", () => {
+    $("#decrypted").value = decrypt($("#cipher").value || "");
+  });
 });
 </script>
 
