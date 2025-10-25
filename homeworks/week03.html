@@ -46,7 +46,7 @@ margin-bottom: 1em;
 </style>
 </head>
 <body>
-<h2>RSA (p=17, q=19 → n=323) — direct ASCII mapping + frequency guess (no key)</h2>
+<h2>RSA (p=17, q=19 → n=323), direct ASCII mapping + frequency guess (no key)</h2>
 
 <div>
   <label><strong>Plaintext</strong></label>
@@ -55,7 +55,7 @@ margin-bottom: 1em;
 </div>
 
 <div style="margin-top:10px;">
-  <label><strong>Ciphertext (gibberish ASCII)</strong></label>
+  <label><strong>Ciphertext</strong></label>
   <textarea id="cipher" placeholder="Ciphertext appears here"></textarea>
 </div>
 
@@ -74,9 +74,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Fixed tiny RSA ---
   const n = 17n * 19n;   // 323
   const e = 5n;
-  const d = 173n;        // private exponent (not used by the guesser)
+  const d = 173n;      
 
-  // --- Modular exponentiation (BigInt) ---
+
   function modPow(base, exp, mod) {
     base = (base % mod + mod) % mod;
     let result = 1n;
@@ -110,9 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return out;
   }
 
-  // --- Guess (without key) using frequency rank mapping ---
-  // Most frequent ciphertext char → ' ' (space) or 'e'? We'll prioritize 'e' as you said.
-  // Single algorithm: rank-match ciphertext char frequencies to English frequency order.
+  // rank-match ciphertext char frequencies to English frequency order.
   const FREQ_ORDER = [' ','e','t','a','o','i','n','s','h','r','d','l','c','u','m','w','f','g','y','p','b','v','k','j','x','q','z'];
 
   function guessByFrequency(cipher) {
@@ -137,7 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return out;
   }
 
-  // --- Wire up UI ---
   const $ = sel => document.querySelector(sel);
 
   $("#encrypt").addEventListener("click", () => {
