@@ -20,7 +20,7 @@
 </head>
 <body>
   <header>
-    <h1>Law of Large Numbers — Minimal Demo</h1>
+    <h1>Law of Large Numbers</h1>
   </header>
 
   <div class="wrap">
@@ -51,7 +51,7 @@
           <button id="run">Simulate</button>
         </div>
       </div>
-      <p class="note">This shows m trajectories of the running relative frequency f(n) and a vertical histogram of f(k) across trajectories. The dashed red line is the true p.</p>
+     
       <div id="stats" class="note"></div>
     </div>
 
@@ -64,12 +64,10 @@
   </div>
 
   <script>
-    // --- Minimal helpers ---
     function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
     function mulberry32(a){ return function(){ var t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15, t|1); t^=t+Math.imul(t^t>>>7, t|61); return ((t^t>>>14)>>>0)/4294967296; } }
     function hashString(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
 
-    // --- DOM ---
     const pEl = document.getElementById('p');
     const mEl = document.getElementById('m');
     const nEl = document.getElementById('n');
@@ -90,10 +88,8 @@
       n = clamp(parseInt(nEl.value)||0, 50, 5000);
       const rng = Math.random;
 
-      // Ensure k is in range
       if (!kEl.value) kEl.value = n; else kEl.value = clamp(parseInt(kEl.value)||n, 1, n);
 
-      // Precompute cumulative frequencies per trajectory
       F = new Float32Array(m*n);
       for (let i=0;i<m;i++){
         let sum=0;
@@ -151,7 +147,6 @@
   const vals = new Float32Array(m);
   for(let i=0;i<m;i++) vals[i] = F[i*n + (k-1)];
 
-  // binning
   const bins = Math.min(26, Math.ceil(Math.sqrt(m))+6);
   const lo = 0, hi = 1;
   const counts = new Int32Array(bins);
@@ -176,7 +171,7 @@
   hctx.lineTo(L, T);
   hctx.stroke();
 
-  // bars (vertical)
+  // bars
   for(let b=0;b<bins;b++){
     const x0 = L + b*(W/bins);
     const barW = (W/bins)*0.9;
@@ -219,7 +214,6 @@
     runBtn.addEventListener('click', simulate);
     kEl.addEventListener('change', function(){ if (!F) return; const k = clamp(parseInt(kEl.value)||1, 1, n); kEl.value=k; draw(); updateStats(k); });
 
-    // First run
     simulate();
   </script>
 </body>
