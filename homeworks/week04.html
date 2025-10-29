@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LLN Minimal Simulator</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #ffffff; color: #222; }
+    header { padding: 12px 16px; border-bottom: 1px solid #ddd; }
+    h1 { margin: 0; font-size: 18px; }
+    .wrap { display: grid; grid-template-columns: 300px 860px; grid-template-rows: auto 500px; column-gap: 12px; row-gap: 12px; padding: 12px 16px; }
+    .panel { border: 1px solid #ddd; padding: 10px; }
+    .controls label { display: block; margin: 6px 0 2px; font-size: 12px; }
+    .controls input { width: 100%; padding: 6px 8px; border: 1px solid #bbb; border-radius: 4px; font-size: 14px; }
+    .controls button { margin-top: 8px; padding: 8px 10px; font-size: 14px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
+    .canwrap { display: grid; grid-template-columns: 560px 280px; column-gap: 12px; }
+    canvas { background: #fafafa; border: 1px solid #ddd; }
+    .note { font-size: 12px; color: #555; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Law of Large Numbers — Minimal Demo</h1>
+  </header>
+
+  <div class="wrap">
+    <div class="panel controls">
+      <div class="row">
+        <div>
+          <label for="p">Probability p (0–1)</label>
+          <input id="p" type="number" step="0.01" min="0" max="1" value="0.6" />
+        </div>
+        <div>
+          <label for="m">Trajectories m</label>
+          <input id="m" type="number" min="5" max="500" step="5" value="100" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="n">Trials n</label>
+          <input id="n" type="number" min="50" max="5000" step="50" value="1000" />
+        </div>
+        <div>
+          <label for="k">Histogram index k</label>
+          <input id="k" type="number" min="1" step="1" value="1000" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="seed">Seed</label>
+          <input id="seed" type="text" value="42" />
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button id="run">Simulate</button>
+        </div>
+      </div>
+      <p class="note">This shows m trajectories of the running relative frequency f(n) and a vertical histogram of f(k) across trajectories. The dashed red line is the true p.</p>
+      <div id="stats" class="note"></div>
+    </div>
+
+    <div class="panel" style="grid-column: 2 / 3; grid-row: 1 / 3;">
+      <div class="canwrap">
+        <canvas id="traj" width="560" height="500"></canvas>
+        <canvas id="hist" width="280" height="500"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Minimal helpers ---
+    function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+    function mulberry32(a){ return function(){ var t=a+=0x6D2B79F5; t=Math.imul(t^t>>>15, t|1); t^=t+Math.imul(t^t>>>7, t|61); return ((t^t>>>14)>>>0)/4294967296; } }
+    function hashString(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+
+    // --- DOM ---
+    const pEl = document.getElementById('p');
+    const mEl = document.getElementById('m');
+    const nEl = document.getElementById('n');
+    const kEl = document.getElementById('k');
+    const seedEl = document.getElementById('seed');
+    const stats = document.getElementById('stats');
+    const runBtn = document.getElementById('run');
+
+    const traj = document.getElementById('traj');
+    const hist = document.getElementById('hist');
+    const tctx = traj.getContext('2d');
+    const hctx = hist.getContext('2d');
+
+    let F = null, m=0, n=0, p=0;
+
+    function simulate(){
+      p = clamp(parseFloat(pEl.value)||0, 0, 1);
+      m = clamp(parseInt(mEl.value)||0, 5, 500);
+      n = clamp(parseInt(nEl.value)||0, 50, 5000);
+      const seed = seedEl.value+"";
+      const rng = mulberry32(hashString(seed));
+
+      // Ensure k is in range
+      if (!kEl.value) kEl.value = n; else kEl.value = clamp(parseInt(kEl.value)||n, 1, n);
+
+      // Precompute cumulative frequencies per trajectory
+      F = new Float32Array(m*n);
+      for (let i=0;i<m;i++){
+        let sum=0;
+        for (let j=0;j<n;j++){
+          if (rng() < p) sum += 1;
+          F[i*n + j] = sum/(j+1);
+        }
+      }
+      draw();
+      updateStats(parseInt(kEl.value));
+    }
+
+    function draw(){
+      drawTrajectories(parseInt(kEl.value));
+      drawHistogram(parseInt(kEl.value));
+    }
+
+    function drawTrajectories(k){
+      const L=40, R=10, T=10, B=36; const cw=traj.width, ch=traj.height; const W=cw-L-R, H=ch-T-B;
+      tctx.clearRect(0,0,cw,ch);
+      // axes
+      tctx.strokeStyle="#ccc"; tctx.lineWidth=1; tctx.beginPath();
+      tctx.moveTo(L,ch-B); tctx.lineTo(cw-R,ch-B); tctx.moveTo(L,T); tctx.lineTo(L,ch-B); tctx.stroke();
+      // grid
+      tctx.fillStyle="#666"; tctx.font="10px Arial";
+      for (let i=0;i<=5;i++){ const v=i/5, y=ch-B - v*H; tctx.strokeStyle="#eee"; tctx.beginPath(); tctx.moveTo(L,y); tctx.lineTo(cw-R,y); tctx.stroke(); tctx.fillText(v.toFixed(2), 6, y+3); }
+      // true p
+      const yp = ch-B - p*H; tctx.strokeStyle="#e74c3c"; tctx.setLineDash([6,6]); tctx.beginPath(); tctx.moveTo(L,yp); tctx.lineTo(cw-R,yp); tctx.stroke(); tctx.setLineDash([]);
+      // vertical at k
+      if (k){ const xk = L + (k-1)/(n-1)*W; tctx.strokeStyle="#8888ff"; tctx.beginPath(); tctx.moveTo(xk,T); tctx.lineTo(xk,ch-B); tctx.stroke(); }
+      // trajectories
+      tctx.strokeStyle="rgba(120,120,120,0.5)"; tctx.lineWidth=1;
+      for (let i=0;i<m;i++){
+        tctx.beginPath();
+        for (let j=0;j<n;j++){
+          const x = L + j/(n-1)*W; const y = ch-B - F[i*n + j]*H; if (j===0) tctx.moveTo(x,y); else tctx.lineTo(x,y);
+        }
+        tctx.stroke();
+      }
+      // labels
+      tctx.fillStyle="#333"; tctx.font="12px Arial"; tctx.fillText("Number of trials (n)", L + W/2 - 60, ch-10);
+      tctx.save(); tctx.translate(12, T + H/2 + 40); tctx.rotate(-Math.PI/2); tctx.fillText("Relative frequency f(n)", 0, 0); tctx.restore();
+    }
+
+    function drawHistogram(k){
+      const L=26, R=10, T=12, B=30; const cw=hist.width, ch=hist.height; const W=cw-L-R, H=ch-T-B;
+      hctx.clearRect(0,0,cw,ch);
+      // collect f(k)
+      const vals = new Float32Array(m); for (let i=0;i<m;i++) vals[i] = F[i*n + (k-1)];
+      // bins
+      const bins = Math.min(24, Math.max(8, Math.round(Math.sqrt(m))+4));
+      const counts = new Int32Array(bins); const bw = 1/bins; let maxc=0;
+      for (let i=0;i<m;i++){ let b = Math.floor(vals[i]/bw); if (b>=bins) b=bins-1; counts[b]++; if (counts[b]>maxc) maxc=counts[b]; }
+      // axes
+      hctx.strokeStyle="#ccc"; hctx.lineWidth=1; hctx.beginPath(); hctx.moveTo(L,ch-B); hctx.lineTo(cw-R,ch-B); hctx.moveTo(L,T); hctx.lineTo(L,ch-B); hctx.stroke();
+      // bars (horizontal)
+      const barH = (H/bins)*0.9;
+      for (let b=0;b<bins;b++){
+        const y = T + b*(H/bins) + (H/bins - barH)/2; const w = maxc? (counts[b]/maxc)*(W-2): 0;
+        hctx.fillStyle = "#cfd8ff"; hctx.fillRect(L+1, y, w, barH);
+      }
+      // p line
+      const yp = ch-B - p*H; hctx.strokeStyle="#e74c3c"; hctx.setLineDash([6,6]); hctx.beginPath(); hctx.moveTo(L,yp); hctx.lineTo(cw-R,yp); hctx.stroke(); hctx.setLineDash([]);
+      // labels
+      hctx.fillStyle="#333"; hctx.font="12px Arial"; hctx.fillText(`f(k) at k=${k}`, L, T+12); hctx.fillText("count →", cw-60, ch-10);
+      // ticks 0..1
+      hctx.fillStyle="#666"; hctx.font="10px Arial"; for (let i=0;i<=4;i++){ const v=i/4, y=ch-B - v*H; hctx.fillText(v.toFixed(2), 4, y+3); }
+    }
+
+    function updateStats(k){
+      let s=0, s2=0; for (let i=0;i<m;i++){ const v = F[i*n + (k-1)]; s+=v; s2+=v*v; }
+      const mean = s/m; const var_ = s2/m - mean*mean; const sd = Math.sqrt(Math.max(0,var_));
+      const esd = Math.sqrt(p*(1-p)/k);
+      stats.textContent = `p=${p.toFixed(3)}  |  mean(f(k))≈${mean.toFixed(4)}  |  sd≈${sd.toFixed(4)}  |  expected sd≈${esd.toFixed(4)}`;
+    }
+
+    runBtn.addEventListener('click', simulate);
+    kEl.addEventListener('change', function(){ if (!F) return; const k = clamp(parseInt(kEl.value)||1, 1, n); kEl.value=k; draw(); updateStats(k); });
+
+    // First run
+    simulate();
+  </script>
+</body>
+</html>
