@@ -140,29 +140,74 @@
     }
 
     function drawHistogram(k){
-      const L=26, R=10, T=12, B=30; const cw=hist.width, ch=hist.height; const W=cw-L-R, H=ch-T-B;
-      hctx.clearRect(0,0,cw,ch);
-      // collect f(k)
-      const vals = new Float32Array(m); for (let i=0;i<m;i++) vals[i] = F[i*n + (k-1)];
-      // bins
-      const bins = Math.min(24, Math.max(8, Math.round(Math.sqrt(m))+4));
-      const counts = new Int32Array(bins); const bw = 1/bins; let maxc=0;
-      for (let i=0;i<m;i++){ let b = Math.floor(vals[i]/bw); if (b>=bins) b=bins-1; counts[b]++; if (counts[b]>maxc) maxc=counts[b]; }
-      // axes
-      hctx.strokeStyle="#ccc"; hctx.lineWidth=1; hctx.beginPath(); hctx.moveTo(L,ch-B); hctx.lineTo(cw-R,ch-B); hctx.moveTo(L,T); hctx.lineTo(L,ch-B); hctx.stroke();
-      // bars (horizontal)
-      const barH = (H/bins)*0.9;
-      for (let b=0;b<bins;b++){
-        const y = T + b*(H/bins) + (H/bins - barH)/2; const w = maxc? (counts[b]/maxc)*(W-2): 0;
-        hctx.fillStyle = "#cfd8ff"; hctx.fillRect(L+1, y, w, barH);
-      }
-      // p line
-      const yp = ch-B - p*H; hctx.strokeStyle="#e74c3c"; hctx.setLineDash([6,6]); hctx.beginPath(); hctx.moveTo(L,yp); hctx.lineTo(cw-R,yp); hctx.stroke(); hctx.setLineDash([]);
-      // labels
-      hctx.fillStyle="#333"; hctx.font="12px Arial"; hctx.fillText(`f(k) at k=${k}`, L, T+12); hctx.fillText("count →", cw-60, ch-10);
-      // ticks 0..1
-      hctx.fillStyle="#666"; hctx.font="10px Arial"; for (let i=0;i<=4;i++){ const v=i/4, y=ch-B - v*H; hctx.fillText(v.toFixed(2), 4, y+3); }
-    }
+  const dpi = window.devicePixelRatio || 1;
+  const cw = hist.width, ch = hist.height;
+  const L = 40, R = 20, T = 20, B = 40;
+  const W = cw - L - R, H = ch - T - B;
+
+  hctx.clearRect(0,0,cw,ch);
+
+  // gather f(k) across trajectories
+  const vals = new Float32Array(m);
+  for(let i=0;i<m;i++) vals[i] = F[i*n + (k-1)];
+
+  // binning
+  const bins = Math.min(26, Math.ceil(Math.sqrt(m))+6);
+  const lo = 0, hi = 1;
+  const counts = new Int32Array(bins);
+  const bw = (hi-lo)/bins;
+  let maxCount = 0;
+  for(let i=0;i<m;i++){
+    let b = Math.floor((vals[i]-lo)/bw);
+    if (b<0) b=0; if (b>=bins) b=bins-1;
+    counts[b]++;
+    if (counts[b]>maxCount) maxCount = counts[b];
+  }
+
+  // axes
+  hctx.strokeStyle = "#ccc";
+  hctx.lineWidth = 1;
+  hctx.beginPath();
+  // x-axis (values of f)
+  hctx.moveTo(L, ch-B);
+  hctx.lineTo(cw-R, ch-B);
+  // y-axis (counts)
+  hctx.moveTo(L, ch-B);
+  hctx.lineTo(L, T);
+  hctx.stroke();
+
+  // bars (vertical)
+  for(let b=0;b<bins;b++){
+    const x0 = L + b*(W/bins);
+    const barW = (W/bins)*0.9;
+    const h = (counts[b]/maxCount)*H;
+    const y0 = ch - B - h;
+    hctx.fillStyle = "#cfd8ff";
+    hctx.fillRect(x0 + (W/bins-barW)/2, y0, barW, h);
+  }
+
+  // red dashed line at p (true value)
+  const xp = L + (p - lo)/(hi - lo)*W;
+  hctx.strokeStyle = "#e74c3c";
+  hctx.setLineDash([6,6]);
+  hctx.beginPath();
+  hctx.moveTo(xp, ch-B);
+  hctx.lineTo(xp, T);
+  hctx.stroke();
+  hctx.setLineDash([]);
+
+  // labels
+  hctx.fillStyle = "#333";
+  hctx.font = "12px Arial";
+  hctx.fillText(`Distribution of f(k) at k=${k}`, L + 10, T + 12);
+  hctx.fillText("f(n)", L + W/2 - 10, ch - 10);
+  hctx.save();
+  hctx.translate(12, T + H/2);
+  hctx.rotate(-Math.PI/2);
+  hctx.fillText("count", 0, 0);
+  hctx.restore();
+}
+
 
     function updateStats(k){
       let s=0, s2=0; for (let i=0;i<m;i++){ const v = F[i*n + (k-1)]; s+=v; s2+=v*v; }
