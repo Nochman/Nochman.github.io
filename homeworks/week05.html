@@ -3,78 +3,143 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Measures of Location & Dispersion (Minimal CSS)</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<title>Measures of Location and Dispersion</title>
 <style>
-/* Minimal, readable defaults */
-:root { --fg:#111; --bg:#fff; --muted:#666; --accent:#0a7; }
-html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji"}
-.wrap{max-width:920px;margin:auto;padding:24px}
-h1{font-size:1.9rem;line-height:1.2;margin:0 0 10px}
-h2{font-size:1.5rem;margin:28px 0 8px}
-h3{font-size:1.15rem;margin:22px 0 6px}
-p{margin:10px 0}
-ul{margin:8px 0 16px 1.25rem}
-code{background:#f5f5f5;border-radius:4px;padding:0 .25rem}
-pre{background:#f5f5f5;padding:10px;border-radius:6px;overflow:auto}
-.muted{color:var(--muted)}
-.badge{display:inline-block;font-size:.8rem;border:1px solid #ddd;border-radius:999px;padding:.15rem .5rem;margin:.1rem .25rem;background:#fafafa}
-.toc{border:1px solid #eee;border-radius:8px;padding:12px;background:#fcfcfc}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-hr{border:none;border-top:1px solid #eee;margin:24px 0}
-.block{padding:12px 14px;border:1px solid #eee;border-radius:8px;background:#fff}
-.def{background:#f7fffb;border-color:#e3fbf3}
-.use{background:#f8f9ff;border-color:#e8eaff}
-.adv{background:#fffdf7;border-color:#fff2cc}
-.lim{background:#fff7f7;border-color:#ffe0e0}
-.source-list{margin-top:6px}
+  body {
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    padding: 0 1rem;
+    line-height: 1.5;
+    background: #fff;
+    color: #222;
+    overflow-y: scroll;
+  }
+  main { max-width: 800px; margin: 2rem auto; }
+  h1, h2, h3 { margin-top: 1.5em; }
+  h1 { text-align: center; }
+  ul { margin-left: 1.25rem; }
+  pre { background: #f5f5f5; padding: .5rem; border-radius: 4px; overflow-x: auto; }
+  section { margin-bottom: 2rem; }
+  h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+}
 </style>
 </head>
 <body>
-<main class="wrap">
-<h1>Measures of Location / Central Tendency & Dispersion</h1>
-<p class="muted">A compact reference with definitions, uses, advantages, and limitations.</p>
+<main>
+  <h1>Measures of Location and Dispersion</h1>
 
+  <h2>1. Measures of Location / Central Tendency</h2>
+  <p>These statistics summarise a dataset by a single value around which the data centre or cluster.</p>
 
-<nav class="toc">
-<strong>Contents</strong>
-<ul>
-<li><a href="#location">1. Measures of Location / Central Tendency</a>
-<ul>
-<li><a href="#mean">a) Arithmetic Mean</a></li>
-<li><a href="#median">b) Median</a></li>
-<li><a href="#mode">c) Mode</a></li>
-<li><a href="#other-location">d) Other location measures</a></li>
-</ul>
-</li>
-<li><a href="#dispersion">2. Measures of Dispersion / Spread</a>
-<ul>
-<li><a href="#range">a) Range</a></li>
-<li><a href="#variance">b) Variance</a></li>
-<li><a href="#sd">c) Standard Deviation</a></li>
-<li><a href="#iqr">d) Interquartile Range (IQR)</a></li>
-</ul>
-</li>
-</ul>
-</nav>
+  <h3>a) Arithmetic Mean</h3>
+  <p><strong>Definition:</strong> For a sample of values x₁, x₂, …, xₙ, the arithmetic mean is:</p>
+  <pre>\( \bar x = \frac{1}{n} \sum_{i=1}^n x_i \)</pre>
+  <p><strong>Uses:</strong> The default “average”, widely used in inferential procedures like t‑tests and regression.</p>
+  <p><strong>Advantages:</strong></p>
+  <ul>
+    <li>Uses all data values and is efficient when data are roughly symmetric.</li>
+    <li>Integrates naturally with parametric modelling under normality assumptions.</li>
+  </ul>
+  <p><strong>Limitations:</strong></p>
+  <ul>
+    <li>Sensitive to outliers and skewed data.</li>
+    <li>May misrepresent the typical case in heavy‑tailed distributions.</li>
+  </ul>
 
+  <h3>b) Median</h3>
+  <p><strong>Definition:</strong> Arrange data in order; the median is the middle value (if odd) or the average of the two middle values (if even).</p>
+  <p><strong>Uses:</strong> Represents the 50th percentile—half the observations are below and half above.</p>
+  <p><strong>Advantages:</strong></p>
+  <ul>
+    <li>Robust to outliers and skew.</li>
+    <li>Appropriate for ordinal data.</li>
+  </ul>
+  <p><strong>Limitations:</strong></p>
+  <ul>
+    <li>Ignores magnitudes of most observations.</li>
+    <li>Less suited for parametric statistical methods.</li>
+  </ul>
 
-<section id="location">
-<h2>1. Measures of Location / Central Tendency</h2>
-<p>These are statistics that attempt to summarise a data set by a single value around which the data “centre” or “cluster”.</p>
-<div class="source-list">
-<span class="badge">GeeksforGeeks +3</span>
-<span class="badge">Australian Bureau of Statistics +3</span>
-<span class="badge">Lecturio +3</span>
-</div>
+  <h3>c) Mode</h3>
+  <p><strong>Definition:</strong> The value that occurs most frequently in the dataset.</p>
+  <p><strong>Uses:</strong> Useful for categorical or discrete data where a numeric average is meaningless.</p>
+  <p><strong>Advantages:</strong></p>
+  <ul>
+    <li>Applicable to nominal data.</li>
+    <li>Intuitive—shows the most common value.</li>
+  </ul>
+  <p><strong>Limitations:</strong></p>
+  <ul>
+    <li>May have multiple or no modes.</li>
+    <li>Does not show spread or shape.</li>
+  </ul>
 
+  <h3>d) Other Measures</h3>
+  <p>Mid‑range, weighted, geometric, or trimmed means are used in specialised cases such as finance or economics.</p>
+  <p><em>Choice among mean, median, and mode depends on data type, skewness, and analytical goals.</em></p>
 
-<section id="mean">
-<h3>a) Arithmetic Mean</h3>
-<div class="block def">
-<strong>Definition.</strong>
-<p>For a sample of values <code>x_1, x_2, …, x_n</code>, the arithmetic mean is</p>
-<pre><code>\( \bar x = \frac{1}{n} \sum_{i=1}^n x_i \)</code></pre>
-</div>
-<div class="block use">
+  <h2>2. Measures of Dispersion / Spread</h2>
+  <p>These describe how spread out the data are around the central value.</p>
+
+  <h3>a) Range</h3>
+  <p><strong>Definition:</strong> Maximum minus minimum.</p>
+  <p><strong>Uses:</strong> Quick sense of total spread.</p>
+  <p><strong>Advantages:</strong></p>
+  <ul>
+    <li>Simple to compute.</li>
+    <li>Shows overall span of data.</li>
+  </ul>
+  <p><strong>Limitations:</strong></p>
+  <ul>
+    <li>Highly sensitive to outliers.</li>
+    <li>Ignores distribution within the extremes.</li>
+  </ul>
+
+  <h3>b) Variance</h3>
+  <p><strong>Definition:</strong> Average squared deviation from the mean:</p>
+  <pre>\( s^2 = \frac{1}{n-1} \sum_{i=1}^n (x_i - \bar x)^2 \)</pre>
+  <p><strong>Uses:</strong> Basis for standard deviation; central to parametric tests.</p>
+  <p><strong>Advantages:</strong></p>
+  <ul>
+    <li>Uses all deviations and highlights larger ones.</li>
+    <li>Mathematically convenient for inference.</li>
+  </ul>
+  <p><strong>Limitations:</strong></p>
+  <ul>
+    <li>Measured in squared units.</li>
+    <li>Sensitive to outliers and skewness.</li>
+  </ul>
+
+  <h3>c) Standard Deviation (SD)</h3>
+  <p><strong>Definition:</strong> Square root of the variance.</p>
+  <p><strong>Uses:</strong> Common measure of average distance from the mean.</p>
+  <p><strong>Advantages:</strong></p>
+  <ul>
+    <li>Same units as data, easier to interpret.</li>
+    <li>Under normality, ~68% of values lie within ±1 SD.</li>
+  </ul>
+  <p><strong>Limitations:</strong></p>
+  <ul>
+    <li>Influenced by outliers.</li>
+    <li>Less meaningful when mean is not a good centre.</li>
+  </ul>
+
+  <h3>d) Interquartile Range (IQR)</h3>
+  <p><strong>Definition:</strong> Q3 − Q1, covering the middle 50% of the data.</p>
+  <p><strong>Uses:</strong> Robust measure of spread paired with the median.</p>
+  <p><strong>Advantages:</strong></p>
+  <ul>
+    <li>Less affected by outliers and skew.</li>
+    <li>Focuses on variability of central values.</li>
+  </ul>
+  <p><strong>Limitations:</strong></p>
+  <ul>
+    <li>Ignores tails of the distribution.</li>
+    <li>Not ideal for normality‑based analyses.</li>
+  </ul>
+</main>
+</body>
 </html>
+
