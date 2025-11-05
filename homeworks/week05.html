@@ -13,10 +13,11 @@
   pre, code { background: #f5f5f5; padding: .5rem; border-radius: 4px; }
   pre { overflow-x: auto; }
   section { margin-bottom: 2rem; }
-  .controls { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: start; }
-  input[type="text"] { width: 100%; padding: .5rem; font-size: 1rem; }
+  .controls { display: flex; gap: .5rem; align-items: stretch; margin: .75rem 0; }
+  input[type="number"] { flex: 1; padding: .5rem; font-size: 1rem; }
   button { padding: .5rem .8rem; font-size: 1rem; }
   .math { padding: .5rem; background: #fafafa; border-radius: 4px; }
+  .note { color:#555; font-size:.95rem; }
 </style>
 </head>
 <body>
@@ -151,65 +152,70 @@ M2 ← M2 + δ · δ₂
 # Population variance:  σ² = M2 / n
 # Sample variance:      s² = M2 / (n − 1)  (if n > 1)</pre>
 
-    <h3>3.3 Interactive Demo</h3>
-    <p>Enter numbers separated by commas; stats are computed with the online algorithm above.</p>
+    <h3>3.3 One‑by‑One Interactive Demo</h3>
+    <p class="note">Enter a single number and click <em>Add</em> (or press <kbd>Enter</kbd>). Each entry updates the statistics incrementally.</p>
     <div class="controls">
-      <input id="dataInput" type="text" placeholder="e.g. 1, 2, 3, 4, 5" />
-      <button id="calcBtn" type="button">Compute</button>
+      <input id="numberInput" type="number" placeholder="Enter a number" />
+      <button id="addBtn" type="button">Add</button>
+      <button id="resetBtn" type="button">Reset</button>
     </div>
-    <pre id="results">(results will appear here)</pre>
+    <pre id="results">No data yet.</pre>
   </section>
 </main>
 
 <script>
 (function(){
-let n = 0, mean = 0, M2 = 0;
+  let n = 0, mean = 0, M2 = 0;
 
+  function updateStats(x){
+    const delta = x - mean;
+    n += 1;
+    mean += delta / n;
+    const delta2 = x - mean;
+    M2 += delta * delta2;
+  }
 
-function updateStats(x){
-const delta = x - mean;
-n++;
-mean += delta / n;
-const delta2 = x - mean;
-M2 += delta * delta2;
-}
+  function formatResults(){
+    if (n === 0) return 'No data yet.';
+    const sampleVar = n > 1 ? M2 / (n - 1) : 0;
+    const popVar    = n > 0 ? M2 / n : 0;
+    return `Count (n): ${n}\nMean: ${mean.toFixed(6)}\nSample variance: ${sampleVar.toFixed(6)}\nPopulation variance: ${popVar.toFixed(6)}`;
+  }
 
+  function refresh(){
+    document.getElementById('results').textContent = formatResults();
+  }
 
-function formatResults(){
-if (n === 0) return 'No data yet.';
-const variance = n > 1 ? M2 / (n - 1) : 0;
-const popVar = n > 0 ? M2 / n : 0;
-return `Count (n): ${n}\nMean: ${mean.toFixed(6)}\nSample variance: ${variance.toFixed(6)}\nPopulation variance: ${popVar.toFixed(6)}`;
-}
+  const input = document.getElementById('numberInput');
+  const add   = document.getElementById('addBtn');
+  const reset = document.getElementById('resetBtn');
 
+  add.addEventListener('click', () => {
+    const value = parseFloat(input.value);
+    if (!Number.isFinite(value)) return;
+    updateStats(value);
+    refresh();
+    input.value = '';
+    input.focus();
+  });
 
-function refreshDisplay(){
-document.getElementById('results').textContent = formatResults();
-}
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      add.click();
+    }
+  });
 
+  reset.addEventListener('click', () => {
+    n = 0; mean = 0; M2 = 0;
+    refresh();
+    input.focus();
+  });
 
-document.getElementById('addBtn').addEventListener('click', () => {
-const input = document.getElementById('numberInput');
-const value = parseFloat(input.value);
-if (!Number.isFinite(value)) return;
-updateStats(value);
-refreshDisplay();
-input.value = '';
-input.focus();
-});
-
-
-document.getElementById('resetBtn').addEventListener('click', () => {
-n = 0; mean = 0; M2 = 0;
-refreshDisplay();
-});
-
-
-refreshDisplay();
+  refresh();
 })();
 </script>
 
+<!-- MathJax after content so it can see and render $$...$$ blocks -->
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
-
