@@ -171,34 +171,51 @@ M2'  = M2 + δ * δ2
     <pre id="online-test">(results will appear here)</pre>
   </section>
 
-  <script>
-  (function(){
-    const data = [1, 2, 3, 4, 5, 100]; // includes an outlier to illustrate robustness concerns
+<script>
+(function () {
+  const run = () => {
+    const data = [1, 2, 3, 4, 5, 100]; // outlier to illustrate variance sensitivity
     let n = 0, m = 0, M2 = 0;
     const lines = [];
+
     for (const x of data) {
       const n1 = n + 1;
       const delta = x - m;
       const m1 = m + delta / n1;
       const delta2 = x - m1;
       const M21 = M2 + delta * delta2;
+
       n = n1; m = m1; M2 = M21;
-      const popVar = M2 / n;
+
+      const popVar  = M2 / n;
       const sampVar = n > 1 ? M2 / (n - 1) : NaN;
-      lines.push(`n=${n}	x=${x}	mean=${m.toFixed(6)}	popVar=${popVar.toFixed(6)}	sampVar=${isNaN(sampVar)?"-":sampVar.toFixed(6)}`);
+
+      lines.push(
+        `n=${n}\tx=${x}\tmean=${m.toFixed(6)}\tpopVar=${popVar.toFixed(6)}\t` +
+        `sampVar=${isNaN(sampVar) ? "-" : sampVar.toFixed(6)}`
+      );
     }
+
     const out = [
-      'Streaming update demo (Welford):',
-      '--------------------------------',
-      'data = [' + data.join(', ') + ']',
-      '',
+      "Streaming update demo (Welford):",
+      "--------------------------------",
+      "data = [" + data.join(", ") + "]",
+      "",
       ...lines
-    ].join('
-');
-    const pre = document.getElementById('online-test');
+    ].join("\n"); // <-- use "\n" here
+
+    const pre = document.getElementById("online-test");
     if (pre) pre.textContent = out;
-  })();
-  </script>
+  };
+
+  // run after DOM is ready (in case the script is moved to <head>)
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+</script>
 </main>
 </body>
 </html>
