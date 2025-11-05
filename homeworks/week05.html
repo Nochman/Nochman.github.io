@@ -21,6 +21,7 @@
   pre { background: #f5f5f5; padding: .5rem; border-radius: 4px; overflow-x: auto; }
   section { margin-bottom: 2rem; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
 <main>
@@ -31,7 +32,7 @@
 
   <h3>a) Arithmetic Mean</h3>
   <p><strong>Definition:</strong> For a sample of values x₁, x₂, …, xₙ, the arithmetic mean is:</p>
-  <pre>\( \bar x = \frac{1}{n} \sum_{i=1}^n x_i \)</pre>
+ <pre>$$\bar x = \frac{1}{n}\sum_{i=1}^n x_i$$</pre>
   <p><strong>Uses:</strong> The default “average”, widely used in inferential procedures like t‑tests and regression.</p>
   <p><strong>Advantages:</strong></p>
   <ul>
@@ -166,56 +167,30 @@ M2'  = M2 + δ * δ2
     Substituting <code>m' - m = δ / n'</code> and simplifying yields <code>M2' = M2 + δ (x - m')</code>, i.e., <code>M2' = M2 + δ δ2</code>.</p>
 
 
-    <h3>3.5 In‑Page Test</h3>
-    <p>The script below computes streaming mean and variance for a small example.</p>
-    <pre id="online-test">(results will appear here)</pre>
-  </section>
-
-<script>
-(function () {
-  const run = () => {
-    const data = [1, 2, 3, 4, 5, 100]; // outlier to illustrate variance sensitivity
-    let n = 0, m = 0, M2 = 0;
-    const lines = [];
-
-    for (const x of data) {
-      const n1 = n + 1;
-      const delta = x - m;
-      const m1 = m + delta / n1;
-      const delta2 = x - m1;
-      const M21 = M2 + delta * delta2;
-
-      n = n1; m = m1; M2 = M21;
-
-      const popVar  = M2 / n;
-      const sampVar = n > 1 ? M2 / (n - 1) : NaN;
-
-      lines.push(
-        `n=${n}\tx=${x}\tmean=${m.toFixed(6)}\tpopVar=${popVar.toFixed(6)}\t` +
-        `sampVar=${isNaN(sampVar) ? "-" : sampVar.toFixed(6)}`
-      );
-    }
-
-    const out = [
-      "Streaming update demo (Welford):",
-      "--------------------------------",
-      "data = [" + data.join(", ") + "]",
-      "",
-      ...lines
-    ].join("\n"); // <-- use "\n" here
-
-    const pre = document.getElementById("online-test");
-    if (pre) pre.textContent = out;
-  };
-
-  // run after DOM is ready (in case the script is moved to <head>)
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
-  }
-})();
-</script>
 </main>
+  <script>
+function computeOnlineStats(values) {
+let n = 0, mean = 0, M2 = 0;
+for (const x of values) {
+const delta = x - mean;
+n++;
+mean += delta / n;
+const delta2 = x - mean;
+M2 += delta * delta2;
+}
+const variance = n > 1 ? M2 / (n - 1) : 0;
+return { n, mean, variance };
+}
+
+
+document.getElementById('calcBtn').addEventListener('click', () => {
+const input = document.getElementById('dataInput').value.trim();
+if (!input) return;
+const numbers = input.split(',').map(x => parseFloat(x)).filter(x => !isNaN(x));
+const { n, mean, variance } = computeOnlineStats(numbers);
+const output = `Count (n): ${n}\nMean: ${mean.toFixed(6)}\nVariance: ${variance.toFixed(6)}`;
+document.getElementById('results').textContent = output;
+});
+</script>
 </body>
 </html>
