@@ -1,1 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Measures of Location & Dispersion (Minimal CSS)</title>
+<style>
+/* Minimal, readable defaults */
+:root { --fg:#111; --bg:#fff; --muted:#666; --accent:#0a7; }
+html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji"}
+.wrap{max-width:920px;margin:auto;padding:24px}
+h1{font-size:1.9rem;line-height:1.2;margin:0 0 10px}
+h2{font-size:1.5rem;margin:28px 0 8px}
+h3{font-size:1.15rem;margin:22px 0 6px}
+p{margin:10px 0}
+ul{margin:8px 0 16px 1.25rem}
+code{background:#f5f5f5;border-radius:4px;padding:0 .25rem}
+pre{background:#f5f5f5;padding:10px;border-radius:6px;overflow:auto}
+.muted{color:var(--muted)}
+.badge{display:inline-block;font-size:.8rem;border:1px solid #ddd;border-radius:999px;padding:.15rem .5rem;margin:.1rem .25rem;background:#fafafa}
+.toc{border:1px solid #eee;border-radius:8px;padding:12px;background:#fcfcfc}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+hr{border:none;border-top:1px solid #eee;margin:24px 0}
+.block{padding:12px 14px;border:1px solid #eee;border-radius:8px;background:#fff}
+.def{background:#f7fffb;border-color:#e3fbf3}
+.use{background:#f8f9ff;border-color:#e8eaff}
+.adv{background:#fffdf7;border-color:#fff2cc}
+.lim{background:#fff7f7;border-color:#ffe0e0}
+.source-list{margin-top:6px}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1>Measures of Location / Central Tendency & Dispersion</h1>
+<p class="muted">A compact reference with definitions, uses, advantages, and limitations.</p>
 
+
+<nav class="toc">
+<strong>Contents</strong>
+<ul>
+<li><a href="#location">1. Measures of Location / Central Tendency</a>
+<ul>
+<li><a href="#mean">a) Arithmetic Mean</a></li>
+<li><a href="#median">b) Median</a></li>
+<li><a href="#mode">c) Mode</a></li>
+<li><a href="#other-location">d) Other location measures</a></li>
+</ul>
+</li>
+<li><a href="#dispersion">2. Measures of Dispersion / Spread</a>
+<ul>
+<li><a href="#range">a) Range</a></li>
+<li><a href="#variance">b) Variance</a></li>
+<li><a href="#sd">c) Standard Deviation</a></li>
+<li><a href="#iqr">d) Interquartile Range (IQR)</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+
+
+<section id="location">
+<h2>1. Measures of Location / Central Tendency</h2>
+<p>These are statistics that attempt to summarise a data set by a single value around which the data “centre” or “cluster”.</p>
+<div class="source-list">
+<span class="badge">GeeksforGeeks +3</span>
+<span class="badge">Australian Bureau of Statistics +3</span>
+<span class="badge">Lecturio +3</span>
+</div>
+
+
+<section id="mean">
+<h3>a) Arithmetic Mean</h3>
+<div class="block def">
+<strong>Definition.</strong>
+<p>For a sample of values <code>x_1, x_2, …, x_n</code>, the arithmetic mean is</p>
+<pre><code>\( \bar x = \frac{1}{n} \sum_{i=1}^n x_i \)</code></pre>
+</div>
+<div class="block use">
+</html>
