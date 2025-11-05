@@ -160,7 +160,17 @@ M2 ← M2 + δ · δ₂
       <button id="resetBtn" type="button">Reset</button>
     </div>
     <pre id="results">No data yet.</pre>
-  </section>
+  <h3>3.4 Numerical Analysis and Computational Perspective</h3>
+<p>From a numerical analysis and computational perspective, <strong>online algorithms</strong> such as Welford’s offer significant advantages over traditional batch methods:</p>
+<ul>
+  <li><strong>Numerical stability:</strong> By updating mean and variance incrementally, online methods reduce rounding errors that accumulate in large sums. They avoid subtracting nearly equal numbers, which prevents <em>catastrophic cancellation</em>.</li>
+  <li><strong>Error propagation:</strong> Each step depends only on the previous mean, count, and sum of squared deviations, so local floating-point errors do not compound exponentially as in full recomputation cycles.</li>
+  <li><strong>Overflow and underflow management:</strong> Because they operate on differences relative to the current mean instead of total sums, intermediate values remain small, preventing overflow when processing large or high-magnitude datasets.</li>
+  <li><strong>Computational efficiency:</strong> Each update runs in constant time O(1), without needing to store or reprocess prior data, which is particularly advantageous for streaming or big data scenarios.</li>
+  <li><strong>Robustness and scalability:</strong> Online algorithms handle large-scale or continuous data streams efficiently, maintaining accuracy under limited memory and precision constraints, while batch methods scale poorly with data size.</li>
+</ul>
+<p>In summary, online algorithms outperform traditional batch approaches by combining computational efficiency with enhanced numerical reliability, making them the preferred choice for modern data-intensive applications.</p>
+</section>
 </main>
 
 <script>
@@ -219,3 +229,4 @@ M2 ← M2 + δ · δ₂
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
+
