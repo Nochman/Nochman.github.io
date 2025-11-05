@@ -5,23 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Measures of Location and Dispersion</title>
 <style>
-  body {
-    font-family: system-ui, sans-serif;
-    margin: 0;
-    padding: 0 1rem;
-    line-height: 1.5;
-    background: #fff;
-    color: #222;
-    overflow-y: scroll;
-  }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 0 1rem; line-height: 1.5; color: #222; }
   main { max-width: 800px; margin: 2rem auto; }
-  h1, h2, h3 { margin-top: 1.5em; }
   h1 { text-align: center; }
+  h1, h2, h3 { margin-top: 1.5em; }
   ul { margin-left: 1.25rem; }
-  pre { background: #f5f5f5; padding: .5rem; border-radius: 4px; overflow-x: auto; }
+  pre, code { background: #f5f5f5; padding: .5rem; border-radius: 4px; }
+  pre { overflow-x: auto; }
   section { margin-bottom: 2rem; }
+  .controls { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: start; }
+  input[type="text"] { width: 100%; padding: .5rem; font-size: 1rem; }
+  button { padding: .5rem .8rem; font-size: 1rem; }
+  .math { padding: .5rem; background: #fafafa; border-radius: 4px; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
 <main>
@@ -31,8 +27,8 @@
   <p>These statistics summarise a dataset by a single value around which the data centre or cluster.</p>
 
   <h3>a) Arithmetic Mean</h3>
-  <p><strong>Definition:</strong> For a sample of values x₁, x₂, …, xₙ, the arithmetic mean is:</p>
- <pre>$$\bar x = \frac{1}{n}\sum_{i=1}^n x_i$$</pre>
+  <p><strong>Definition:</strong> For a sample of values <code>x_1, x_2, …, x_n</code>, the arithmetic mean is:</p>
+  <div class="math">$$\bar x = \frac{1}{n}\sum_{i=1}^n x_i$$</div>
   <p><strong>Uses:</strong> The default “average”, widely used in inferential procedures like t‑tests and regression.</p>
   <p><strong>Advantages:</strong></p>
   <ul>
@@ -47,7 +43,7 @@
 
   <h3>b) Median</h3>
   <p><strong>Definition:</strong> Arrange data in order; the median is the middle value (if odd) or the average of the two middle values (if even).</p>
-  <p><strong>Uses:</strong> Represents the 50th percentile, half the observations are below and half above.</p>
+  <p><strong>Uses:</strong> Represents the 50th percentile — half the observations are below and half above.</p>
   <p><strong>Advantages:</strong></p>
   <ul>
     <li>Robust to outliers and skew.</li>
@@ -65,7 +61,7 @@
   <p><strong>Advantages:</strong></p>
   <ul>
     <li>Applicable to nominal data.</li>
-    <li>Intuitive, shows the most common value.</li>
+    <li>Intuitive — shows the most common value.</li>
   </ul>
   <p><strong>Limitations:</strong></p>
   <ul>
@@ -96,7 +92,7 @@
 
   <h3>b) Variance</h3>
   <p><strong>Definition:</strong> Average squared deviation from the mean:</p>
-  <pre>\( s^2 = \frac{1}{n-1} \sum_{i=1}^n (x_i - \bar x)^2 \)</pre>
+  <div class="math">$$ s^2 = \frac{1}{n-1} \sum_{i=1}^n (x_i - \bar x)^2 $$</div>
   <p><strong>Uses:</strong> Basis for standard deviation; central to parametric tests.</p>
   <p><strong>Advantages:</strong></p>
   <ul>
@@ -136,61 +132,75 @@
     <li>Ignores tails of the distribution.</li>
     <li>Not ideal for normality‑based analyses.</li>
   </ul>
+
   <section id="online-stats">
     <h2>3. Recurrence Relationships & Online (Streaming) Algorithms</h2>
-    <p>This section derives simple update rules for the arithmetic mean and variance and implements numerically stable, memory‑light online algorithms (no batch recomputation).</p>
+    <p>Simple update rules for the mean and variance with numerically stable, memory‑light online algorithms (no batch recomputation).</p>
 
-    <h3>3.1 Arithmetic Mean — Recurrence and Proof</h3>
-    <p>Let <em>m<sub>n</sub></em> be the mean of <em>n</em> values and let a new value <em>x</em> arrive. The updated mean <em>m<sub>n+1</sub></em> is</p>
-    <pre>m_{n+1} = m_{n} + (x - m_{n}) / (n + 1)</pre>
-    <p><strong>Proof (one line).</strong> By definition
-    <code>m_{n} = (1/n) ∑_{i=1}^{n} x_i</code> and <code>m_{n+1} = (1/(n+1))(∑_{i=1}^{n} x_i + x)</code>.
-    Substitute <code>∑ x_i = n m_n</code> and simplify:
-    <code>m_{n+1} = (n m_n + x)/(n+1) = m_n + (x - m_n)/(n+1)</code>.</p>
+    <h3>3.1 Arithmetic Mean — Recurrence</h3>
+    <div class="math">$$ m_{n+1} = m_n + \frac{x - m_n}{n + 1} $$</div>
+    <p><strong>Proof (one line):</strong> From <span class="math">$$ m_n = \frac{1}{n}\sum_{i=1}^{n} x_i $$</span> and <span class="math">$$ m_{n+1} = \frac{1}{n+1}\left(\sum_{i=1}^{n} x_i + x\right) $$</span>, substitute <span class="math">$$ \sum x_i = n m_n $$</span> and simplify.</p>
 
-    <h3>3.2 Variance — Recurrence and Proof (Welford’s Method)</h3>
-    <p>Maintain three state variables: <code>n</code> (count), <code>m</code> (current mean), and <code>M2</code> (sum of squared deviations from the mean).
-    When a new value <code>x</code> arrives, update via:</p>
-    <pre>
-# count before update = n
-n'   = n + 1
-δ    = x - m
-m'   = m + δ / n'
-δ2   = x - m'
-M2'  = M2 + δ * δ2
-    </pre>
-    <p>Then population variance <code>σ² = M2'/n'</code>; sample variance <code>s² = M2'/(n' - 1)</code> for <code>n' &gt; 1</code>.</p>
-    <p><strong>Proof sketch.</strong> Let <code>S_n = ∑(x_i - m)</code> and <code>M2 = ∑(x_i - m)^2</code> for the current mean <code>m</code>.
-    After ingesting <code>x</code>, the new mean is <code>m'</code>. Decompose the new sum of squares around <code>m'</code>:
-    <code>∑(x_i - m')^2 = ∑[(x_i - m) - (m' - m)]^2</code>. Expanding and using <code>∑(x_i - m) = 0</code> gives
-    <code>∑(x_i - m')^2 = M2 + n(m' - m)^2</code>. Including the new point adds <code>(x - m')^2</code>.
-    Substituting <code>m' - m = δ / n'</code> and simplifying yields <code>M2' = M2 + δ (x - m')</code>, i.e., <code>M2' = M2 + δ δ2</code>.</p>
+    <h3>3.2 Variance — Recurrence (Welford)</h3>
+    <p>Keep <code>n</code> (count), <code>m</code> (mean), and <code>M2</code> (sum of squared deviations). For each new value <code>x</code>:</p>
+    <pre>n ← n + 1
+δ  ← x − m
+m ← m + δ / n
+δ₂ ← x − m
+M2 ← M2 + δ · δ₂
+# Population variance:  σ² = M2 / n
+# Sample variance:      s² = M2 / (n − 1)  (if n > 1)</pre>
 
-
+    <h3>3.3 Interactive Demo</h3>
+    <p>Enter numbers separated by commas; stats are computed with the online algorithm above.</p>
+    <div class="controls">
+      <input id="dataInput" type="text" placeholder="e.g. 1, 2, 3, 4, 5" />
+      <button id="calcBtn" type="button">Compute</button>
+    </div>
+    <pre id="results">(results will appear here)</pre>
+  </section>
 </main>
-  <script>
-function computeOnlineStats(values) {
-let n = 0, mean = 0, M2 = 0;
-for (const x of values) {
-const delta = x - mean;
-n++;
-mean += delta / n;
-const delta2 = x - mean;
-M2 += delta * delta2;
-}
-const variance = n > 1 ? M2 / (n - 1) : 0;
-return { n, mean, variance };
-}
 
+<script>
+(function(){
+  function computeOnlineStats(values){
+    let n = 0, mean = 0, M2 = 0;
+    for (const x of values) {
+      const delta = x - mean;
+      n += 1;
+      mean += delta / n;
+      const delta2 = x - mean;
+      M2 += delta * delta2;
+    }
+    const variance = n > 1 ? M2 / (n - 1) : 0;
+    return { n, mean, variance };
+  }
 
-document.getElementById('calcBtn').addEventListener('click', () => {
-const input = document.getElementById('dataInput').value.trim();
-if (!input) return;
-const numbers = input.split(',').map(x => parseFloat(x)).filter(x => !isNaN(x));
-const { n, mean, variance } = computeOnlineStats(numbers);
-const output = `Count (n): ${n}\nMean: ${mean.toFixed(6)}\nVariance: ${variance.toFixed(6)}`;
-document.getElementById('results').textContent = output;
-});
+  function parseNumbers(text){
+    return text
+      .split(/[\s,]+/)
+      .map(s => parseFloat(s))
+      .filter(v => Number.isFinite(v));
+  }
+
+  function onCompute(){
+    const input = document.getElementById('dataInput');
+    const out   = document.getElementById('results');
+    const values = parseNumbers(input.value.trim());
+    if (values.length === 0){
+      out.textContent = '(please enter one or more numbers)';
+      return;
+    }
+    const { n, mean, variance } = computeOnlineStats(values);
+    out.textContent = `Count (n): ${n}\nMean: ${mean.toFixed(6)}\nVariance (sample): ${variance.toFixed(6)}`;
+  }
+
+  document.getElementById('calcBtn').addEventListener('click', onCompute);
+})();
 </script>
+
+<!-- Load MathJax after content so it can render the formulas -->
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
+
