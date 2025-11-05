@@ -163,43 +163,52 @@ M2 ← M2 + δ · δ₂
 
 <script>
 (function(){
-  function computeOnlineStats(values){
-    let n = 0, mean = 0, M2 = 0;
-    for (const x of values) {
-      const delta = x - mean;
-      n += 1;
-      mean += delta / n;
-      const delta2 = x - mean;
-      M2 += delta * delta2;
-    }
-    const variance = n > 1 ? M2 / (n - 1) : 0;
-    return { n, mean, variance };
-  }
+let n = 0, mean = 0, M2 = 0;
 
-  function parseNumbers(text){
-    return text
-      .split(/[\s,]+/)
-      .map(s => parseFloat(s))
-      .filter(v => Number.isFinite(v));
-  }
 
-  function onCompute(){
-    const input = document.getElementById('dataInput');
-    const out   = document.getElementById('results');
-    const values = parseNumbers(input.value.trim());
-    if (values.length === 0){
-      out.textContent = '(please enter one or more numbers)';
-      return;
-    }
-    const { n, mean, variance } = computeOnlineStats(values);
-    out.textContent = `Count (n): ${n}\nMean: ${mean.toFixed(6)}\nVariance (sample): ${variance.toFixed(6)}`;
-  }
+function updateStats(x){
+const delta = x - mean;
+n++;
+mean += delta / n;
+const delta2 = x - mean;
+M2 += delta * delta2;
+}
 
-  document.getElementById('calcBtn').addEventListener('click', onCompute);
+
+function formatResults(){
+if (n === 0) return 'No data yet.';
+const variance = n > 1 ? M2 / (n - 1) : 0;
+const popVar = n > 0 ? M2 / n : 0;
+return `Count (n): ${n}\nMean: ${mean.toFixed(6)}\nSample variance: ${variance.toFixed(6)}\nPopulation variance: ${popVar.toFixed(6)}`;
+}
+
+
+function refreshDisplay(){
+document.getElementById('results').textContent = formatResults();
+}
+
+
+document.getElementById('addBtn').addEventListener('click', () => {
+const input = document.getElementById('numberInput');
+const value = parseFloat(input.value);
+if (!Number.isFinite(value)) return;
+updateStats(value);
+refreshDisplay();
+input.value = '';
+input.focus();
+});
+
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+n = 0; mean = 0; M2 = 0;
+refreshDisplay();
+});
+
+
+refreshDisplay();
 })();
 </script>
 
-<!-- Load MathJax after content so it can render the formulas -->
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
