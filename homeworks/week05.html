@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
 <title>Measures of Location and Dispersion</title>
 <style>
   body { font-family: system-ui, sans-serif; margin: 0; padding: 0 1rem; line-height: 1.5; color: #222; }
@@ -18,6 +19,9 @@
   button { padding: .5rem .8rem; font-size: 1rem; }
   .math { padding: .5rem; background: #fafafa; border-radius: 4px; }
   .note { color:#555; font-size:.95rem; }
+  h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+}
 </style>
 </head>
 <body>
@@ -138,11 +142,11 @@
     <h2>3. Recurrence Relationships & Online (Streaming) Algorithms</h2>
     <p>Simple update rules for the mean and variance with numerically stable, memory‑light online algorithms (no batch recomputation).</p>
 
-    <h3>3.1 Arithmetic Mean — Recurrence</h3>
+    <h3>3.1 Arithmetic Mean: Recurrence</h3>
     <div class="math">$$ m_{n+1} = m_n + \frac{x - m_n}{n + 1} $$</div>
     <p><strong>Proof (one line):</strong> From <span class="math">$$ m_n = \frac{1}{n}\sum_{i=1}^{n} x_i $$</span> and <span class="math">$$ m_{n+1} = \frac{1}{n+1}\left(\sum_{i=1}^{n} x_i + x\right) $$</span>, substitute <span class="math">$$ \sum x_i = n m_n $$</span> and simplify.</p>
 
-    <h3>3.2 Variance — Recurrence (Welford)</h3>
+    <h3>3.2 Variance: Recurrence (Welford)</h3>
     <p>Keep <code>n</code> (count), <code>m</code> (mean), and <code>M2</code> (sum of squared deviations). For each new value <code>x</code>:</p>
     <pre>n ← n + 1
 δ  ← x − m
@@ -225,7 +229,6 @@ M2 ← M2 + δ · δ₂
 })();
 </script>
 
-<!-- MathJax after content so it can see and render $$...$$ blocks -->
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
