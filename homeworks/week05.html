@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
 <title>Measures of Location and Dispersion</title>
 <style>
   body {
@@ -21,9 +20,6 @@
   ul { margin-left: 1.25rem; }
   pre { background: #f5f5f5; padding: .5rem; border-radius: 4px; overflow-x: auto; }
   section { margin-bottom: 2rem; }
-  h1, h2, h3 {
-  font-family: 'Playfair Display', serif;
-}
 </style>
 </head>
 <body>
@@ -31,10 +27,11 @@
   <h1>Measures of Location and Dispersion</h1>
 
   <h2>1. Measures of Location / Central Tendency</h2>
+  <p>These statistics summarise a dataset by a single value around which the data centre or cluster.</p>
 
   <h3>a) Arithmetic Mean</h3>
   <p><strong>Definition:</strong> For a sample of values x₁, x₂, …, xₙ, the arithmetic mean is:</p>
-  <p><strong>Formula:</strong> x&#772; = (1/n) Σ(x<sub>i</sub>)</p>
+  <pre>\( \bar x = \frac{1}{n} \sum_{i=1}^n x_i \)</pre>
   <p><strong>Uses:</strong> The default “average”, widely used in inferential procedures like t‑tests and regression.</p>
   <p><strong>Advantages:</strong></p>
   <ul>
@@ -138,8 +135,70 @@
     <li>Ignores tails of the distribution.</li>
     <li>Not ideal for normality‑based analyses.</li>
   </ul>
+  <section id="online-stats">
+    <h2>3. Recurrence Relationships & Online (Streaming) Algorithms</h2>
+    <p>This section derives simple update rules for the arithmetic mean and variance and implements numerically stable, memory‑light online algorithms (no batch recomputation).</p>
+
+    <h3>3.1 Arithmetic Mean — Recurrence and Proof</h3>
+    <p>Let <em>m<sub>n</sub></em> be the mean of <em>n</em> values and let a new value <em>x</em> arrive. The updated mean <em>m<sub>n+1</sub></em> is</p>
+    <pre>m_{n+1} = m_{n} + (x - m_{n}) / (n + 1)</pre>
+    <p><strong>Proof (one line).</strong> By definition
+    <code>m_{n} = (1/n) ∑_{i=1}^{n} x_i</code> and <code>m_{n+1} = (1/(n+1))(∑_{i=1}^{n} x_i + x)</code>.
+    Substitute <code>∑ x_i = n m_n</code> and simplify:
+    <code>m_{n+1} = (n m_n + x)/(n+1) = m_n + (x - m_n)/(n+1)</code>.</p>
+
+    <h3>3.2 Variance — Recurrence and Proof (Welford’s Method)</h3>
+    <p>Maintain three state variables: <code>n</code> (count), <code>m</code> (current mean), and <code>M2</code> (sum of squared deviations from the mean).
+    When a new value <code>x</code> arrives, update via:</p>
+    <pre>
+# count before update = n
+n'   = n + 1
+δ    = x - m
+m'   = m + δ / n'
+δ2   = x - m'
+M2'  = M2 + δ * δ2
+    </pre>
+    <p>Then population variance <code>σ² = M2'/n'</code>; sample variance <code>s² = M2'/(n' - 1)</code> for <code>n' &gt; 1</code>.</p>
+    <p><strong>Proof sketch.</strong> Let <code>S_n = ∑(x_i - m)</code> and <code>M2 = ∑(x_i - m)^2</code> for the current mean <code>m</code>.
+    After ingesting <code>x</code>, the new mean is <code>m'</code>. Decompose the new sum of squares around <code>m'</code>:
+    <code>∑(x_i - m')^2 = ∑[(x_i - m) - (m' - m)]^2</code>. Expanding and using <code>∑(x_i - m) = 0</code> gives
+    <code>∑(x_i - m')^2 = M2 + n(m' - m)^2</code>. Including the new point adds <code>(x - m')^2</code>.
+    Substituting <code>m' - m = δ / n'</code> and simplifying yields <code>M2' = M2 + δ (x - m')</code>, i.e., <code>M2' = M2 + δ δ2</code>.</p>
+
+
+    <h3>3.5 In‑Page Test</h3>
+    <p>The script below computes streaming mean and variance for a small example.</p>
+    <pre id="online-test">(results will appear here)</pre>
+  </section>
+
+  <script>
+  (function(){
+    const data = [1, 2, 3, 4, 5, 100]; // includes an outlier to illustrate robustness concerns
+    let n = 0, m = 0, M2 = 0;
+    const lines = [];
+    for (const x of data) {
+      const n1 = n + 1;
+      const delta = x - m;
+      const m1 = m + delta / n1;
+      const delta2 = x - m1;
+      const M21 = M2 + delta * delta2;
+      n = n1; m = m1; M2 = M21;
+      const popVar = M2 / n;
+      const sampVar = n > 1 ? M2 / (n - 1) : NaN;
+      lines.push(`n=${n}	x=${x}	mean=${m.toFixed(6)}	popVar=${popVar.toFixed(6)}	sampVar=${isNaN(sampVar)?"-":sampVar.toFixed(6)}`);
+    }
+    const out = [
+      'Streaming update demo (Welford):',
+      '--------------------------------',
+      'data = [' + data.join(', ') + ']',
+      '',
+      ...lines
+    ].join('
+');
+    const pre = document.getElementById('online-test');
+    if (pre) pre.textContent = out;
+  })();
+  </script>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
-
