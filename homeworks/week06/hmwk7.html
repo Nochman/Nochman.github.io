@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Random-Walk Security Simulator</title>
+<style>
+  :root { --fg:#111; --muted:#666; --bg:#fff; --accent:#2266ff; }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+  .wrap{max-width:960px;margin:24px auto;padding:0 16px}
+  h1{font-size:18px;margin:8px 0 16px}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+  .controls label{display:flex;flex-direction:column;gap:4px;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
+  .controls input{padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px}
+  button{padding:10px 14px;border-radius:10px;border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer}
+  button:hover{background:#eef2ff}
+  .row{display:grid;grid-template-columns:1fr;gap:14px}
+  .card{border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+  .meta{color:var(--muted);font-size:12px}
+  canvas{width:100%;height:360px;border-radius:8px;background:#fff;display:block}
+  table{border-collapse:collapse;width:100%;font-size:12px}
+  th,td{border:1px solid #e5e7eb;padding:6px 8px;text-align:right}
+  th:first-child,td:first-child{text-align:center}
+  .footer{margin-top:18px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Random‑Walk Security Simulator</h1>
+    <div class="controls">
+      <label>Weeks (n)
+        <input id="n" type="number" min="1" value="52" />
+      </label>
+      <label>Attackers per week (m)
+        <input id="m" type="number" min="0" value="5" />
+      </label>
+      <label>Attacker breach prob (p)
+        <input id="p" type="number" min="0" max="1" step="0.001" value="0.1" />
+      </label>
+      <label>Trajectories (T)
+        <input id="T" type="number" min="10" step="10" value="20000" />
+      </label>
+      <label>Show sample paths
+        <input id="k" type="number" min="1" value="8" />
+      </label>
+      <div style="display:flex;align-items:end;gap:8px">
+        <button id="run">Run simulation</button>
+        <button id="export">Export counts (CSV)</button>
+      </div>
+    </div>
+
+    <div class="meta" id="stats">—</div>
+
+    <div class="row">
+      <div class="card">
+        <div class="meta">Sample trajectories (cumulative score over weeks)</div>
+        <canvas id="traj"></canvas>
+      </div>
+      <div class="card">
+        <div class="meta">Final‑score histogram (bars) vs Binomial expectation (dots/line)</div>
+        <canvas id="hist"></canvas>
+      </div>
+      <div class="card">
+        <div class="meta">Central counts (around the mean)</div>
+        <div id="table"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Model: each week is secure with probability <code>q=(1-p)^m</code>. Score +1 if secure, −1 if breached. Final score <code>S=2X−n</code> with <code>X∼Binomial(n,q)</code>. Total‑variation distance compares empirical vs theoretical distributions.
+    </div>
+  </div>
+
+<script>
+// ---------- Math helpers ----------
+function pow(a,b){ return Math.pow(a,b); }
+function rand(){ return Math.random(); }
+
+// Binomial PMF via stable recursion over k (avoids huge combinations)
+function binomialPMFRow(n,q){
+  const pmf = new Array(n+1).fill(0);
+  const r = q/(1-q);
+  let p0 = pow(1-q, n); // k=0
+  pmf[0] = p0;
+  for (let k=0;k<n;k++){
+    p0 = p0 * ((n-k)/(k+1)) * r; // p_{k+1}
+    pmf[k+1] = p0;
+  }
+  return pmf;
+}
+
+// Total variation distance between two aligned arrays of probabilities
+function totalVariation(p, q){
+  let s=0; for(let i=0;i<p.length;i++) s += Math.abs(p[i]-q[i]);
+  return 0.5*s;
+}
+
+// ---------- Simulation ----------
+function simulate(n,m,p,T){
+  const q = pow(1-p, m);
+  const scores = new Int16Array(T);
+  const paths = []; // store only some for display
+  const k = Math.min(Number(document.getElementById('k').value||8), T);
+  const sampleIdx = new Set();
+  while(sampleIdx.size < k){ sampleIdx.add(Math.floor(rand()*T)); }
+  const want = new Set(sampleIdx);
+
+  for(let t=0;t<T;t++){
+    let s=0;
+    let path = want.has(t) ? new Int16Array(n) : null;
+    for(let i=0;i<n;i++){
+      const secure = rand() < q; // +1 if secure else -1
+      s += secure ? 1 : -1;
+      if(path) path[i] = s;
+    }
+    scores[t]=s;
+    if(path) paths.push(path);
+  }
+  return {q, scores, paths};
+}
+
+// Build histogram of final scores (even integers from -n to n)
+function histogramScores(scores, n){
+  const L = n+1; // indices 0..n map to S=-n+2i
+  const counts = new Array(L).fill(0);
+  for(const s of scores){
+    const i = (s + n)/2; // s = -n + 2i
+    if (i>=0 && i<L) counts[i]++;
+  }
+  return {counts, scoresAxis: Array.from({length:L}, (_,i)=> -n + 2*i)};
+}
+
+// ---------- Drawing helpers (minimal canvas) ----------
+function getCtx(id){
+  const c = document.getElementById(id);
+  // Scale for crisp lines on HiDPI
+  const ratio = window.devicePixelRatio || 1;
+  const w = c.clientWidth, h = c.clientHeight;
+  if(c.width !== Math.floor(w*ratio) || c.height !== Math.floor(h*ratio)){
+    c.width = Math.floor(w*ratio); c.height = Math.floor(h*ratio);
+  }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  ctx.clearRect(0,0,w,h);
+  return {ctx, w, h};
+}
+
+function drawAxes(ctx,w,h,pad=28){
+  ctx.strokeStyle = '#d1d5db';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); // x
+  ctx.moveTo(pad, pad);   ctx.lineTo(pad, h-pad);   // y
+  ctx.stroke();
+  return {x0:pad,y0:h-pad, x1:w-pad, y1:pad};
+}
+
+function mapLin(x, a,b, A,B){ return A + (x-a)*(B-A)/(b-a); }
+
+// ---------- Plots ----------
+function plotTrajectories(paths, n){
+  const {ctx,w,h} = getCtx('traj');
+  const ax = drawAxes(ctx,w,h);
+  // y-range from min to max across paths
+  let ymin=0, ymax=0;
+  for(const path of paths){
+    for(const s of path){ if(s<ymin) ymin=s; if(s>ymax) ymax=s; }
+  }
+  if(ymax===ymin){ ymin-=1; ymax+=1; }
+  ctx.lineWidth = 1.25;
+  for(const path of paths){
+    ctx.beginPath();
+    for(let i=0;i<n;i++){
+      const x = mapLin(i+1, 1,n, ax.x0, ax.x1);
+      const y = mapLin(path[i], ymin,ymax, ax.y0, ax.y1);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = '#555';
+    ctx.stroke();
+  }
+}
+
+function plotHistogramVsTheory(hist, pmf, T, n){
+  const {ctx,w,h} = getCtx('hist');
+  const ax = drawAxes(ctx,w,h);
+  const xs = hist.scoresAxis; // even scores
+  const counts = hist.counts;
+  const expected = pmf.map((pk)=> pk*T); // aligned by k (#secure)
+
+  // map y
+  const ymax = Math.max(...counts, ...expected);
+  const barW = (ax.x1-ax.x0) / xs.length * 0.9;
+
+  // Bars
+  ctx.fillStyle = '#ddd';
+  for(let i=0;i<xs.length;i++){
+    const x = mapLin(i,0,xs.length, ax.x0, ax.x1) + 1;
+    const y = mapLin(counts[i], 0,ymax, ax.y0, ax.y1);
+    const y0 = ax.y0;
+    ctx.fillRect(x, y, barW, y0 - y);
+  }
+
+  // Line + dots
+  ctx.strokeStyle = '#333'; ctx.lineWidth=1.2; ctx.beginPath();
+  for(let i=0;i<xs.length;i++){
+    const x = mapLin(i,0,xs.length, ax.x0, ax.x1) + barW/2;
+    const y = mapLin(expected[i], 0,ymax, ax.y0, ax.y1);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  for(let i=0;i<xs.length;i++){
+    const x = mapLin(i,0,xs.length, ax.x0, ax.x1) + barW/2;
+    const y = mapLin(expected[i], 0,ymax, ax.y0, ax.y1);
+    ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fillStyle='#111'; ctx.fill();
+  }
+}
+
+// ---------- Table ----------
+function renderCentralTable(container, xs, counts, expected, meanS, stdS){
+  const lo = Math.floor(meanS - 2*stdS);
+  const hi = Math.ceil(meanS + 2*stdS);
+  let rows = [];
+  for(let i=0;i<xs.length;i++){
+    const s = xs[i];
+    if(s>=lo && s<=hi){ rows.push({S:s, Emp:counts[i], Theo:expected[i]}); }
+  }
+  const html = `
+    <table>
+      <thead><tr><th>S</th><th>Empirical</th><th>Binomial exp.</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr><td>${r.S}</td><td>${r.Emp}</td><td>${r.Theo.toFixed(1)}</td></tr>`).join('')}
+      </tbody>
+    </table>`;
+  container.innerHTML = html;
+}
+
+// ---------- Main run ----------
+function run(){
+  const n = Number(document.getElementById('n').value || 52);
+  const m = Number(document.getElementById('m').value || 5);
+  const p = Number(document.getElementById('p').value || 0.1);
+  const T = Number(document.getElementById('T').value || 20000);
+
+  if(!(p>=0 && p<=1)){ alert('p must be in [0,1]'); return; }
+
+  // simulate
+  const {q, scores, paths} = simulate(n,m,p,T);
+
+  // histogram
+  const hist = histogramScores(scores, n);
+
+  // theory (pmf over k=#secure 0..n), align to scores S=2k-n
+  const pmfK = binomialPMFRow(n, q);
+  const expectedCounts = pmfK.map(pk => pk*T);
+
+  // stats
+  const meanS = n*(2*q - 1);
+  const varS  = 4*n*q*(1-q);
+  const stdS  = Math.sqrt(varS);
+
+  // tv distance
+  const empP = hist.counts.map(c=>c/T);
+  const tv = totalVariation(empP, pmfK);
+
+  // draw
+  plotTrajectories(paths, n);
+  plotHistogramVsTheory(hist, pmfK, T, n);
+  renderCentralTable(document.getElementById('table'), hist.scoresAxis, hist.counts, expectedCounts, meanS, stdS);
+
+  // meta
+  document.getElementById('stats').textContent = `q=(1-p)^m = ${(q).toFixed(4)}  •  E[S]=${meanS.toFixed(2)}  •  SD[S]=${stdS.toFixed(2)}  •  TV distance=${tv.toFixed(4)}  •  T=${T}`;
+
+  // data for export
+  window.__lastData = {n,m,p,q,T, xs: hist.scoresAxis, empirical: hist.counts, expected: expectedCounts};
+}
+
+function exportCSV(){
+  const d = window.__lastData; if(!d){ alert('Run the simulation first.'); return; }
+  const lines = ['S,empirical_count,expected_count'];
+  for(let i=0;i<d.xs.length;i++){
+    lines.push(`${d.xs[i]},${d.empirical[i]},${d.expected[i].toFixed(6)}`);
+  }
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'score_counts.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('run').addEventListener('click', run);
+document.getElementById('export').addEventListener('click', exportCSV);
+
+// First paint
+run();
+</script>
+</body>
+</html>
