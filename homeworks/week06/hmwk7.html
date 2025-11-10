@@ -252,9 +252,8 @@ run();
 </script>
 
   <section id="hmwk-2">
-  <h2>HMWK 2 — Analogies with the Bernoulli LLN Simulation</h2>
-  <p><strong>Goal.</strong> Connect the “weekly security” random-walk model in HMWK 1 to the Bernoulli-process simulation of the Law of Large Numbers (LLN) and to classical discrete mathematics (binomial coefficients, Pascal’s triangle, binomial expansion, Fibonacci, and combinatorics). We also relate these to the <em>online</em> mean/variance algorithms used earlier.</p>
-
+  <h2>HMWK 2</h2>
+    
   <h3>1) Formal equivalence of the models</h3>
   <p>Let there be <em>m</em> independent attackers, each breaching in a given week with probability <em>p</em>. The probability the server is breached by at least one attacker in a week is</p>
   <div class="math">$$ q = 1 - (1-p)^m, \qquad \text{secure with prob } 1-q = (1-p)^m. $$</div>
@@ -295,7 +294,7 @@ run();
   </ul>
 
   <h3>7) Tie-back to online statistics</h3>
-  <p>The streaming mean/variance (Welford) from the previous work gives real-time LLN demonstrations: for the Bernoulli indicators it tracks the breach rate $$q$$; for the random walk it tracks drift and variability of $$S_n$$ — directly connecting HMWK 1 to the earlier location/dispersion and online computation content.</p>
+  <p>The streaming mean/variance (Welford) from the previous work gives real-time LLN demonstrations: for the Bernoulli indicators it tracks the breach rate $$q$$; for the random walk it tracks drift and variability of $$S_n$$,  directly connecting HMWK 1 to the earlier location/dispersion and online computation content.</p>
 </section>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
