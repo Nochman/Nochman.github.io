@@ -250,5 +250,53 @@ function run(){
 document.getElementById('run').addEventListener('click', run);
 run();
 </script>
+
+  <section id="hmwk-2">
+  <h2>HMWK 2 — Analogies with the Bernoulli LLN Simulation</h2>
+  <p><strong>Goal.</strong> Connect the “weekly security” random-walk model in HMWK 1 to the Bernoulli-process simulation of the Law of Large Numbers (LLN) and to classical discrete mathematics (binomial coefficients, Pascal’s triangle, binomial expansion, Fibonacci, and combinatorics). We also relate these to the <em>online</em> mean/variance algorithms used earlier.</p>
+
+  <h3>1) Formal equivalence of the models</h3>
+  <p>Let there be <em>m</em> independent attackers, each breaching in a given week with probability <em>p</em>. The probability the server is breached by at least one attacker in a week is</p>
+  <div class="math">$$ q = 1 - (1-p)^m, \qquad \text{secure with prob } 1-q = (1-p)^m. $$</div>
+  <p>Define weekly steps $$Y_t \in \{+1,-1\}$$ with $$Y_t=+1$$ if secure and $$Y_t=-1$$ if breached. Then</p>
+  <div class="math">$$ \mathbb P(Y_t=+1)=1-q,\quad \mathbb P(Y_t=-1)=q. $$</div>
+  <p>The cumulative score after <em>n</em> weeks is a (biased) simple random walk</p>
+  <div class="math">$$ S_n = \sum_{t=1}^n Y_t, \qquad S_n = (n-B_n) - B_n = n - 2B_n, $$</div>
+  <p>where $$B_n \sim \mathrm{Bin}(n,q)$$ is the number of breached weeks.</p>
+
+  <h3>2) LLN/CLT link & online estimators</h3>
+  <p>By the LLN for Bernoulli variables, $$B_n/n \to q$$ almost surely, so</p>
+  <div class="math">$$ \frac{S_n}{n} = 1 - 2\,\frac{B_n}{n} \;\xrightarrow{\;\text{a.s.}\;}\; 1-2q. $$</div>
+  <p>Single-step moments: $$\mathbb E[Y]=1-2q,\quad \operatorname{Var}(Y)=4q(1-q).$$ Hence $$\mathbb E[S_n]=n(1-2q),\ \operatorname{Var}(S_n)=4n\,q(1-q).$$</p>
+  <p>The <em>online</em> updates from earlier apply directly to $$Y_t$$ (or to breach indicators $$X_t=\tfrac{1-Y_t}{2}\in\{0,1\}$$): they give $$\mathcal O(1)$$, numerically stable running estimates of the mean/variance and thus of $$q$$ via $$\hat q=\tfrac{1-\hat m}{2}$$.</p>
+
+  <h3>3) Binomial distribution & Pascal’s triangle</h3>
+  <p>Reaching $$S_n=s$$ means $$b=(n-s)/2$$ breaches (same parity). The number of length-$$n$$ trajectories with exactly $$b$$ breaches is</p>
+  <div class="math">$$ \#\{\text{paths to score } s\} = \binom{n}{b},\qquad b=\frac{n-s}{2}. $$</div>
+  <p>These are precisely the entries of <strong>Pascal’s triangle</strong>. The weighting follows the <strong>binomial expansion</strong>:</p>
+  <div class="math">$$ ((1-q)+q)^n = \sum_{b=0}^n \binom{n}{b} (1-q)^{n-b} q^b. $$</div>
+  <p>For large $$n$$, by the CLT, $$S_n$$ is approximately normal with the mean and variance above.</p>
+
+  <h3>4) Random-walk viewpoint</h3>
+  <p>This is a biased simple random walk with up-step probability $$1-q$$. The special case $$q=\tfrac12$$ is symmetric (zero drift); mapping from $$B_n$$ to $$S_n$$ scales variance by the step size (here 2).</p>
+
+  <h3>5) Fibonacci and related combinatorics</h3>
+  <ul>
+    <li><em>Pascal–Fibonacci.</em> Sums along shallow diagonals of Pascal’s triangle yield Fibonacci numbers:
+      $$F_k=\sum_j \binom{k-j-1}{j}.$$</li>
+    <li><em>No consecutive breaches.</em> If two successive −1 steps are forbidden, the number of admissible sequences of length $$n$$ equals $$F_{n+2}$$ (compositions into 1’s and 2’s).</li>
+    <li><em>(Optional) Catalan.</em> Constraining paths to never dip below a baseline leads to Catalan counts, another classic link between random walks and combinatorics.</li>
+  </ul>
+
+  <h3>6) Beyond IID & large-system limits</h3>
+  <ul>
+    <li><em>Many attackers, small p.</em> With $$m$$ large and $$p$$ small, letting $$\lambda=mp$$ gives $$q=1-(1-p)^m\approx 1-e^{-\lambda}\approx \lambda$$ for small $$\lambda$$; per week it’s still Bernoulli$$(q)$$ and over $$n$$ weeks Bin$$(n,q)$$.</li>
+    <li><em>Heterogeneous weeks.</em> If $$q_t$$ varies (changing $$m_t$$ or $$p_t$$), the breach count is <em>Poisson-binomial</em>. The random-walk view still holds with time-varying bias; online estimators still work.</li>
+  </ul>
+
+  <h3>7) Tie-back to online statistics</h3>
+  <p>The streaming mean/variance (Welford) from the previous work gives real-time LLN demonstrations: for the Bernoulli indicators it tracks the breach rate $$q$$; for the random walk it tracks drift and variability of $$S_n$$ — directly connecting HMWK 1 to the earlier location/dispersion and online computation content.</p>
+</section>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </body>
 </html>
