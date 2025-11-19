@@ -20,167 +20,157 @@
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0,0,0,.06);
     }
-    h1, h2, h3 {
-      font-weight: 600;
-      margin-top: 1.5em;
-      margin-bottom: 0.5em;
-    }
+    h1, h2, h3 { font-weight: 600; margin-top: 1.5em; margin-bottom: 0.5em; }
     h1 { font-size: 1.8rem; margin-top: 0; }
     h2 { font-size: 1.35rem; }
     h3 { font-size: 1.1rem; }
     p { line-height: 1.6; margin: 0.6em 0; }
-    pre {
-      background: #fafafa;
-      padding: 8px;
-      border-radius: 6px;
-      overflow-x: auto;
-      font-size: .9rem;
-    }
-    ul { margin: 0.4em 0 0.4em 1.4em; padding: 0; }
+    ul { margin-left: 1.4em; }
   </style>
 </head>
 
 <body>
-  <main class="page">
+<main class="page">
 
-    <h1>Probability Theory: Interpretations, Axioms, and Measure Theory</h1>
+<h1>Probability Theory: Interpretations, Axioms, and Measure Theory</h1>
 
-    <p>
-      Probability has several interpretations—classical, frequentist, Bayesian, geometric—and historically these
-      led to conceptual disagreements. The modern axiomatic approach provides a unifying framework that all
-      interpretations satisfy. Measure theory then offers a precise language in which probability spaces and random
-      variables can be rigorously defined.
-    </p>
+<p>
+Probability has several interpretations—classical, frequentist, Bayesian, geometric.  
+The axiomatic approach unifies them, and measure theory supplies the rigorous foundation.
+</p>
 
-    <h2>1. Interpretations of Probability</h2>
+<h2>1. Interpretations of Probability</h2>
 
-    <h3>1.1 Classical Interpretation</h3>
-    <p>
-      Based on symmetry and equally likely outcomes. For a finite sample space,
-      \[
-        P(A)=\frac{\text{favorable outcomes}}{\text{possible outcomes}}.
-      \]
-    </p>
+<h3>1.1 Classical</h3>
+<p>
+\[
+P(A)=\frac{\text{favorable}}{\text{possible}}.
+\]
+</p>
 
-    <h3>1.2 Frequentist Interpretation</h3>
-    <p>
-      Probability is identified with a long-run relative frequency under repeated trials. It struggles with
-      one-off events and the idealization of infinite repetition.
-    </p>
+<h3>1.2 Frequentist</h3>
+<p>Probability = long-run frequency.</p>
 
-    <h3>1.3 Bayesian Interpretation</h3>
-    <p>
-      Probability represents rational degrees of belief. Bayes’ rule updates beliefs:
-      \[
-        P(H\mid D)=\frac{P(D\mid H)P(H)}{P(D)}.
-      \]
-    </p>
+<h3>1.3 Bayesian</h3>
+<p>
+\[
+P(H\mid D)=\frac{P(D\mid H)P(H)}{P(D)}.
+\]
+</p>
 
-    <h3>1.4 Geometric Interpretation</h3>
-    <p>
-      Probability is proportional to geometric measure:
-      \[
-        P(A)=\frac{\text{measure}(A)}{\text{measure}(R)}.
-      \]
-    </p>
+<h3>1.4 Geometric</h3>
+<p>
+\[
+P(A)=\frac{\text{measure}(A)}{\text{measure}(R)}.
+\]
+</p>
 
-    <h3>1.5 How the Axioms Reconcile These Views</h3>
-    <p>
-      Kolmogorov’s axioms require only that \(P\) is a function on a σ-algebra satisfying:
-    </p>
-    <ul>
-      <li>\(P(A)\ge 0\)</li>
-      <li>\(P(\Omega)=1\)</li>
-      <li>For disjoint events \(A_i\):
-        \[
-          P\Bigl(\bigcup_i A_i\Bigr)=\sum_i P(A_i).
-        \]
-      </li>
-    </ul>
-    <p>
-      Classical, frequentist, Bayesian, and geometric interpretations all produce probability measures
-      that satisfy these axioms, even if their philosophical motivations differ.
-    </p>
+<h3>1.5 Axioms Reconcile Them</h3>
+<p>
+All interpretations produce a function \(P\) obeying:
+</p>
+<ul>
+  <li>\(P(A)\ge 0\)</li>
+  <li>\(P(\Omega)=1\)</li>
+  <li>\(P(\bigcup_i A_i)=\sum_i P(A_i)\) for disjoint \(A_i\)</li>
+</ul>
 
-    <h2>2. Probability and Measure Theory</h2>
+<h2>2. Probability and Measure Theory</h2>
 
-    <h3>2.1 Sigma-algebras</h3>
-    <p>
-      A σ-algebra \(\mathcal F\) is a collection of subsets of \(\Omega\) closed under complements and countable unions.
-      Its elements are events.
-    </p>
+<h3>2.1 Sigma-algebras</h3>
+<p>
+A σ-algebra \(\mathcal{F}\) is closed under complements and countable unions.
+</p>
 
-    <h3>2.2 Probability Measures</h3>
-    <p>
-      A probability measure is a function \(P:\mathcal F\to[0,1]\) satisfying the axioms above.
-      The triple \((\Omega,\mathcal F,P)\) is a probability space.
-    </p>
+<h3>2.2 Probability Measures</h3>
+<p>
+A probability measure is a function \(P:\mathcal{F}\to[0,1]\) obeying the axioms.
+</p>
 
-    <h3>2.3 Measurable Functions and Random Variables</h3>
-    <p>
-      A random variable is a measurable function \(X:\Omega\to\mathbb R\), meaning
-      \[
-        X^{-1}(B)\in\mathcal F\quad\text{for all Borel sets }B.
-      \]
-      This lets us define distributions:
-      \[
-        P_X(B)=P(X\in B).
-      \]
-      Expectations are Lebesgue integrals:
-      \[
-        \mathbb E[X]=\int_\Omega X\,dP.
-      \]
-    </p>
+<h3>2.3 Random Variables</h3>
+<p>
+A random variable is a measurable function \(X:\Omega\to\mathbb{R}\):
+\[
+X^{-1}(B)\in\mathcal{F}.
+\]
+Its distribution is
+\[
+P_X(B)=P(X\in B),
+\]
+and expectation is
+\[
+\mathbb{E}[X]=\int_\Omega X\,dP.
+\]
+</p>
 
-    <h2>3. Consequences of the Axioms</h2>
+<h2>3. Consequences of the Axioms</h2>
 
-    <h3>3.1 Subadditivity</h3>
-    <p>
-      For any events \(A_1,A_2,\dots\),
-      \[
-        P\Bigl(\bigcup_i A_i\Bigr)\le \sum_i P(A_i).
-      \]
-    </p>
-    <p>Proof: define disjoint sets</p>
-    <pre>
-B₁ = A₁
-B₂ = A₂ \ A₁
-B₃ = A₃ \ (A₁ ∪ A₂)
-…
-Bₙ = Aₙ \ ⋃_{k<n} A_k
-    </pre>
-    <p>
-      Then \(B_i\subseteq A_i\), the \(B_i\) are disjoint, and
-      \[
-        \bigcup_i A_i=\bigcup_i B_i.
-      \]
-      Countable additivity gives
-      \[
-        P\Bigl(\bigcup_i A_i\Bigr)=\sum_i P(B_i)\le \sum_i P(A_i).
-      \]
-    </p>
+<h3>3.1 Subadditivity</h3>
 
-    <h3>3.2 Inclusion–Exclusion (two sets)</h3>
-    <p>
-      \[
-        P(A\cup B)=P(A)+P(B)-P(A\cap B).
-      \]
-    </p>
+<p>
+For any events \(A_1,A_2,\dots\),
+\[
+P\!\left(\bigcup_i A_i\right)\le \sum_i P(A_i).
+\]
+</p>
 
-    <h3>3.3 General Finite Inclusion–Exclusion</h3>
-    <p>
-      For events \(A_1,\dots,A_n\),
-      \[
-        P\!\left(\bigcup_{i=1}^n A_i\right)
-        = \sum_i P(A_i)
-          - \sum_{i<j} P(A_i\cap A_j)
-          + \sum_{i<j<k} P(A_i\cap A_j\cap A_k)
-          - \cdots
-          + (-1)^{n-1}P(A_1\cap\cdots\cap A_n).
-      \]
-    </p>
+<p><strong>Proof:</strong>  
+Define disjoint sets
+\[
+\begin{aligned}
+B_1 &= A_1,\\
+B_2 &= A_2 \setminus A_1,\\
+B_3 &= A_3 \setminus (A_1 \cup A_2),\\
+&\;\vdots \\
+B_n &= A_n \setminus \bigcup_{k=1}^{n-1} A_k.
+\end{aligned}
+\]
+</p>
 
-  </main>
+<p>
+By construction:
+\[
+B_i \subseteq A_i,\qquad B_i \text{ are disjoint}
+\]
+and
+\[
+\bigcup_{i=1}^\infty A_i = \bigcup_{i=1}^\infty B_i.
+\]
+Using countable additivity on the disjoint \(B_i\):
+\[
+P\!\left(\bigcup_i A_i\right)
+= \sum_i P(B_i)
+\le \sum_i P(A_i).
+\]
+</p>
+
+<h3>3.2 Inclusion–Exclusion (two sets)</h3>
+<p>
+\[
+P(A\cup B)=P(A)+P(B)-P(A\cap B).
+\]
+</p>
+
+<h3>3.3 General Finite Inclusion–Exclusion</h3>
+<p>
+\[
+P\!\left(\bigcup_{i=1}^n A_i\right)=
+\sum_i P(A_i)
+-\sum_{i<j} P(A_i\cap A_j)
++\sum_{i<j<k} P(A_i\cap A_j\cap A_k)
+-\cdots
++(-1)^{n-1}P(A_1\cap\cdots\cap A_n).
+\]
+</p>
+
+<h2>4. Summary</h2>
+
+<p>
+The axioms unify all interpretations of probability, while measure theory gives a precise structure (σ-algebras,
+measures, measurable functions). Properties like subadditivity and inclusion–exclusion follow directly from the axioms.
+</p>
+
+</main>
 </body>
 </html>
 
