@@ -152,16 +152,21 @@ P(A\cup B)=P(A)+P(B)-P(A\cap B).
 </p>
 
 <h3>3.3 General Finite Inclusion–Exclusion</h3>
-<p>
-\[
-P\!\left(\bigcup_{i=1}^n A_i\right)=
-\sum_i P(A_i)
--\sum_{i<j} P(A_i\cap A_j)
-+\sum_{i<j<k} P(A_i\cap A_j\cap A_k)
--\cdots
-+(-1)^{n-1}P(A_1\cap\cdots\cap A_n).
-\]
-</p>
+
+<div>
+$$
+\displaystyle
+P\left(\bigcup_{i=1}^{n} A_i\right)
+=
+\sum_{i=1}^{n} P(A_i)
+\;-\;
+\sum_{1\le i<j\le n} P(A_i \cap A_j)
+\;+\;
+\sum_{1\le i<j<k\le n} P(A_i \cap A_j \cap A_k)
+\;-\;\cdots\;+\;
+(-1)^{\,n-1} P(A_1 \cap \cdots \cap A_n).
+$$
+</div>
 
 <h2>4. Summary</h2>
 
