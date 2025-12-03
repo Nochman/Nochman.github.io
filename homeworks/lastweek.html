@@ -5,220 +5,112 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Euler–Maruyama: Wiener Process</title>
 <style>
-  html,body{margin:0;padding:0;background:#fff;color:#111;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
-  .wrap{max-width:960px;margin:24px auto;padding:0 16px}
+  html,body{margin:0;padding:0;background:#fff;color:#111;font:14px/1.45 system-ui}
+  .wrap{max-width:900px;margin:24px auto;padding:0 16px}
   h1{font-size:18px;margin:8px 0 16px}
   .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px}
-  .controls label{display:flex;flex-direction:column;gap:4px;border:1px solid #e5e7eb;border-radius:10px;padding:8px}
-  .controls input{padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px}
-  button{padding:10px 14px;border-radius:10px;border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer}
+  .controls label{display:flex;flex-direction:column;gap:4px;border:1px solid #ddd;border-radius:10px;padding:8px}
+  .controls input{padding:6px 8px;border:1px solid #ddd;border-radius:8px}
+  button{padding:10px 14px;border-radius:10px;border:1px solid #ddd;background:#f8fafc;cursor:pointer}
   button:hover{background:#eef2ff}
-  .row{display:grid;grid-template-columns:1fr;gap:14px}
-  .card{border:1px solid #e5e7eb;border-radius:12px;padding:12px}
-  .meta{color:#666;font-size:12px}
-  canvas{width:100%;height:360px;border-radius:8px;background:#fff;display:block}
-  table{border-collapse:collapse;width:100%;font-size:12px}
-  th,td{border:1px solid #e5e7eb;padding:6px 8px;text-align:right}
-  th:first-child,td:first-child{text-align:center}
-  .footer{margin-top:18px;color:#666;font-size:12px}
+  .card{border:1px solid #ddd;border-radius:12px;padding:12px;margin-bottom:14px}
+  .meta{color:#666;font-size:12px;margin-bottom:4px}
+  canvas{width:100%;height:360px;background:#fff;border-radius:8px}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Euler–Maruyama Simulator — Wiener Process (Brownian Motion)</h1>
-    <div class="controls">
-      <label>Drift (μ)
-        <input id="mu" type="number" step="0.01" value="0" />
-      </label>
-      <label>Volatility (σ)
-        <input id="sigma" type="number" step="0.01" value="1" />
-      </label>
-      <label>Horizon T
-        <input id="T" type="number" step="0.1" value="1" />
-      </label>
-      <label>Time steps (N)
-        <input id="N" type="number" min="1" value="500" />
-      </label>
-      <label>Paths (M)
-        <input id="M" type="number" min="1" value="5000" />
-      </label>
-      <label>Plot sample paths
-        <input id="K" type="number" min="1" value="8" />
-      </label>
-      <label>Seed (optional)
-        <input id="seed" type="number" value="" placeholder="random" />
-      </label>
-      <div style="display:flex;align-items:end;gap:8px">
-        <button id="run">Run simulation</button>
-      </div>
-    </div>
-
-    <div class="meta" id="stats">—</div>
-
-    <div class="row">
-      <div class="card">
-        <div class="meta">Sample paths X(t) with Euler–Maruyama (dX = μ dt + σ dW)</div>
-        <canvas id="paths"></canvas>
-      </div>
-      <div class="card">
-        <div class="meta">Terminal X(T): histogram (bars) vs Normal(μT, σ²T) expectation (dots/line)</div>
-        <canvas id="hist"></canvas>
-      </div>
-      <div class="card">
-        <div class="meta">Empirical vs Theoretical summary</div>
-        <div id="table"></div>
-      </div>
-    </div>
-
-    <div class="footer">
-      Method: Euler–Maruyama with step Δt=T/N: X<sub>k+1</sub> = X<sub>k</sub> + μΔt + σ√Δt·Z<sub>k</sub>, Z<sub>k</sub>∼𝒩(0,1). For Wiener/Brownian motion, set μ=0, σ=1.
-    </div>
+<div class="wrap">
+  <h1>Euler–Maruyama Simulator — Wiener Process</h1>
+  <div class="controls">
+    <label>Drift (μ)
+      <input id="mu" type="number" step="0.01" value="0" />
+    </label>
+    <label>Volatility (σ)
+      <input id="sigma" type="number" step="0.01" value="1" />
+    </label>
+    <label>Horizon T
+      <input id="T" type="number" step="0.1" value="1" />
+    </label>
+    <label>Time steps (N)
+      <input id="N" type="number" min="1" value="500" />
+    </label>
+    <label>Plot sample paths (K)
+      <input id="K" type="number" min="1" value="8" />
+    </label>
+    <button id="run">Run Simulation</button>
   </div>
 
+  <div class="card">
+    <div class="meta">Sample paths X(t)</div>
+    <canvas id="paths"></canvas>
+  </div>
+</div>
+
 <script>
-// ---------- RNG (seedable) ----------
-function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}}
-function makeRand(seed){return (seed===null||seed===undefined||seed==="")?Math.random:mulberry32(Number(seed)>>>0)}
-function normal01(rand){
-  // Box–Muller
-  let u=0,v=0; while(u===0) u=rand(); while(v===0) v=rand();
+// Normal RNG (Box–Muller)
+function normal01(){
+  let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
   return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
 }
 
-// ---------- Canvas helpers ----------
 function getCtx(id){
   const c=document.getElementById(id);
-  const ratio=window.devicePixelRatio||1; const w=c.clientWidth,h=c.clientHeight;
-  if(c.width!==Math.floor(w*ratio)||c.height!==Math.floor(h*ratio)){c.width=Math.floor(w*ratio);c.height=Math.floor(h*ratio);} 
-  const ctx=c.getContext('2d'); ctx.setTransform(ratio,0,0,ratio,0,0); ctx.clearRect(0,0,w,h); return {ctx,w,h};
-}
-function drawAxes(ctx,w,h,pad=28){
-  ctx.strokeStyle='#d1d5db'; ctx.lineWidth=1; ctx.beginPath();
-  ctx.moveTo(pad,h-pad); ctx.lineTo(w-pad,h-pad);
-  ctx.moveTo(pad,pad); ctx.lineTo(pad,h-pad); ctx.stroke();
-  return {x0:pad,y0:h-pad,x1:w-pad,y1:pad};
-}
-function mapLin(x,a,b,A,B){return A+(x-a)*(B-A)/(b-a);}
-
-// ---------- Histogram helper ----------
-function histogram(data, bins){
-  const min=Math.min(...data), max=Math.max(...data);
-  const edges=Array.from({length:bins+1},(_,i)=>min+(i*(max-min))/bins);
-  const counts=new Array(bins).fill(0);
-  for(const x of data){
-    let i=Math.floor((x-min)/(max-min)*bins); if(i===bins) i=bins-1; counts[i]++;
-  }
-  const centers=edges.slice(0,-1).map((e,i)=>0.5*(e+edges[i+1]));
-  return {centers, counts, min, max};
+  const r=window.devicePixelRatio||1;
+  const w=c.clientWidth, h=c.clientHeight;
+  if(c.width!==w*r||c.height!==h*r){c.width=w*r; c.height=h*r;}
+  const ctx=c.getContext('2d'); ctx.setTransform(r,0,0,r,0,0); ctx.clearRect(0,0,w,h);
+  return {ctx,w,h};
 }
 
-// ---------- Theory ----------
-function normalPDF(x, m, s){const z=(x-m)/s; return Math.exp(-0.5*z*z)/(s*Math.sqrt(2*Math.PI));}
+function drawAxes(ctx,w,h,p=28){
+  ctx.strokeStyle="#ccc";
+  ctx.beginPath(); ctx.moveTo(p,h-p); ctx.lineTo(w-p,h-p);
+  ctx.moveTo(p,p); ctx.lineTo(p,h-p); ctx.stroke();
+  return {x0:p,y0:h-p,x1:w-p,y1:p};
+}
+function mapLin(x,a,b,A,B){return A+(x-a)*(B-A)/(b-a);} 
 
-// ---------- Simulation (Euler–Maruyama) ----------
-function simulateEM({mu,sigma,T,N,M,K,seed}){
-  const dt=T/N, sdt=Math.sqrt(dt); const rand=makeRand(seed); const nPaths=Math.max(1,Math.min(M, 200000));
-  const term=new Float64Array(nPaths);
-  const kShow=Math.max(1,Math.min(K,50)); const sampleIdx=new Set(); while(sampleIdx.size<kShow){ sampleIdx.add(Math.floor((rand())*nPaths)); }
-  const show = Array.from(sampleIdx).sort((a,b)=>a-b);
-  const paths=[]; // each path: Float64Array length N+1
+function runSim(){
+  const mu=Number(document.getElementById('mu').value);
+  const sigma=Number(document.getElementById('sigma').value);
+  const T=Number(document.getElementById('T').value);
+  const N=Number(document.getElementById('N').value);
+  const K=Number(document.getElementById('K').value);
 
-  for(let j=0;j<nPaths;j++){
-    let x=0; let path = show.includes(j) ? new Float64Array(N+1) : null; if(path) path[0]=0;
+  const dt=T/N, sdt=Math.sqrt(dt);
+
+  const paths=[];
+  for(let j=0;j<K;j++){
+    const path=new Float64Array(N+1);
+    let x=0; path[0]=0;
     for(let k=0;k<N;k++){
-      const dW = sdt*normal01(rand);
-      x = x + mu*dt + sigma*dW;
-      if(path) path[k+1]=x;
+      x = x + mu*dt + sigma*sdt*normal01();
+      path[k+1]=x;
     }
-    term[j]=x; if(path) paths.push(path);
+    paths.push(path);
   }
-  return {paths, term};
-}
 
-// ---------- Rendering ----------
-function plotPaths(paths, T){
-  const {ctx,w,h}=getCtx('paths'); const ax=drawAxes(ctx,w,h);
-  // y-range
-  let ymin=0,ymax=0; for(const p of paths){for(const y of p){if(y<ymin) ymin=y; if(y>ymax) ymax=y;}}
-  if(ymax===ymin){ymin-=1;ymax+=1;} const N=paths[0].length-1;
-  ctx.lineWidth=1.25;
+  const {ctx,w,h}=getCtx('paths');
+  const ax=drawAxes(ctx,w,h);
+  let ymin=0,ymax=0;
+  for(const p of paths){for(const y of p){if(y<ymin) ymin=y; if(y>ymax) ymax=y;}}
+  if(ymin===ymax){ymin-=1;ymax+=1;}
+
+  ctx.strokeStyle="#444";
   for(const p of paths){
     ctx.beginPath();
-    for(let i=0;i<=N;i++){
+    for(let i=0;i<p.length;i++){
       const x = mapLin(i/N, 0,1, ax.x0, ax.x1);
       const y = mapLin(p[i], ymin,ymax, ax.y0, ax.y1);
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
-    ctx.strokeStyle='#555'; ctx.stroke();
+    ctx.stroke();
   }
 }
 
-function plotHistogram(term, mu, sigma, T){
-  const {ctx,w,h}=getCtx('hist'); const ax=drawAxes(ctx,w,h);
-  const bins=40; const hst=histogram(term,bins); const ymax=Math.max(...hst.counts);
-  const barW=(ax.x1-ax.x0)/bins*0.9;
-  // bars
-  ctx.fillStyle='#ddd';
-  for(let i=0;i<bins;i++){
-    const x = mapLin(i,0,bins, ax.x0, ax.x1) + 1;
-    const y = mapLin(hst.counts[i], 0,ymax, ax.y0, ax.y1);
-    ctx.fillRect(x, y, barW, ax.y0 - y);
-  }
-  // overlay normal curve scaled to counts
-  const m = mu*T; const s = Math.sqrt((sigma*sigma)*T);
-  ctx.strokeStyle='#333'; ctx.lineWidth=1.2; ctx.beginPath();
-  const L=300; for(let i=0;i<=L;i++){
-    const xv = hst.min + (i/L)*(hst.max - hst.min);
-    const yv = normalPDF(xv, m, s) * (term.length * (hst.max - hst.min) / bins); // scale pdf to histogram counts
-    const x = mapLin(xv, hst.min, hst.max, ax.x0, ax.x1);
-    const y = mapLin(yv, 0, ymax, ax.y0, ax.y1);
-    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-}
-
-function renderTable(term, mu, sigma, T){
-  const mth = mu*T; const vth=(sigma*sigma)*T; const sth=Math.sqrt(vth);
-  let sum=0,sum2=0; for(const x of term){sum+=x; sum2+=x*x;}
-  const mean=sum/term.length; const var=Math.max(0, sum2/term.length - mean*mean);
-  const rows=[
-    ['E[X(T)] (empirical)', mean.toFixed(4)],
-    ['E[X(T)] (theoretical)', mth.toFixed(4)],
-    ['Var[X(T)] (empirical)', var.toFixed(4)],
-    ['Var[X(T)] (theoretical)', vth.toFixed(4)],
-    ['Std dev (empirical)', Math.sqrt(var).toFixed(4)],
-    ['Std dev (theoretical)', sth.toFixed(4)],
-    ['Samples (M)', term.length]
-  ];
-  const html = `<table><thead><tr><th>Quantity</th><th>Value</th></tr></thead><tbody>${rows.map(r=>`<tr><td style="text-align:left">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>`;
-  document.getElementById('table').innerHTML = html;
-}
-
-function run(){
-  const mu=Number(document.getElementById('mu').value||0);
-  const sigma=Number(document.getElementById('sigma').value||1);
-  const T=Number(document.getElementById('T').value||1);
-  const N=Number(document.getElementById('N').value||500);
-  const M=Number(document.getElementById('M').value||5000);
-  const K=Number(document.getElementById('K').value||8);
-  const seedVal=document.getElementById('seed').value;
-
-  if(!(sigma>=0)){alert('σ must be ≥ 0'); return;}
-  if(!(T>0 && N>=1)){alert('T>0 and N≥1 required'); return;}
-
-  const {paths, term} = simulateEM({mu,sigma,T,N,M,K,seed:seedVal});
-  plotPaths(paths, T);
-  plotHistogram(term, mu, sigma, T);
-  renderTable(term, mu, sigma, T);
-
-  // stats line
-  const dt=T/N; const text=`Δt=${dt.toExponential(2)} • Euler–Maruyama with N=${N}, M=${term.length} • X₀=0`;
-  document.getElementById('stats').textContent = text;
-}
-
-// Bind
- document.getElementById('run').addEventListener('click', run);
- run();
+document.getElementById('run').onclick = runSim;
+runSim();
 </script>
 </body>
 </html>
+
